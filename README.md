@@ -48,7 +48,7 @@ See where your time went across 8 task categories, plus a breakdown of what you 
 
 ## Installation
 
-### Option 1 — Let Cowork install it for you (easiest)
+ Let Cowork install it for you.
 
 1. **Download** the [`cowork-roi-report-skill.zip`](https://github.com/Fepilot/What-Cowork-did-for-me/releases/latest/download/cowork-roi-report-skill.zip) from the latest release
 2. **Open** [Copilot Cowork](https://copilot.cloud.microsoft/cowork)
@@ -58,20 +58,6 @@ See where your time went across 8 task categories, plus a breakdown of what you 
 
 4. Cowork will unpack and place the skill in the right location for you
 5. **Done!** In the same session (or a new one), ask: *"What did Cowork do for me?"*
-
-### Option 2 — Manual install
-
-1. **Download** the [`cowork-roi-report-skill.zip`](https://github.com/Fepilot/What-Cowork-did-for-me/releases/latest/download/cowork-roi-report-skill.zip) from the latest release
-2. **Extract** the zip
-3. **Copy** the `cowork-roi-report-skill/` folder to your Cowork skills directory:
-   ```
-   <OneDrive>/Documents/Cowork/skills/cowork-roi-report-skill/
-   ```
-4. **Done!** Ask Cowork: *"What did Cowork do for me?"* or *"My Cowork ROI report"*
-
-#### Alternative paths
-- Cowork container: `/mnt/user-config/.claude/skills/cowork-roi-report-skill/`
-- Custom skills folder: wherever your Cowork instance reads personal skills from
 
 ---
 
