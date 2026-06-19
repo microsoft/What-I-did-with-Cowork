@@ -27,6 +27,10 @@ The report leads with a **speed multiplier** (how much faster Cowork made you vs
 
 ![KPIs and Speed Multiplier](images/report-kpis.png)
 
+### Business Processes 
+See where Cowork drove business impact
+![Work Process](images/WorkProcess.png)
+
 ### Category Breakdown & Analyzed → Produced
 See where your time went across 8 task categories, plus a breakdown of what you fed Cowork vs. what it produced.
 
