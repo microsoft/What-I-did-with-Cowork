@@ -54,7 +54,7 @@ See where your time went across 8 task categories, plus a breakdown of what you 
 
  Let Cowork install it for you.
 
-1. **Download** the [`cowork-roi-report-skill.zip`](https://github.com/Fepilot/What-Cowork-did-for-me/releases/latest/download/cowork-roi-report-skill.zip) from the latest release
+1. **Download** the cowork-roi-report-skill zip file from the latest release
 2. **Open** [Copilot Cowork](https://copilot.cloud.microsoft/cowork)
 3. **Attach** the zip file to the chat and send this prompt:
 
