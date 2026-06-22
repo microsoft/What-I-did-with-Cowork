@@ -2,7 +2,35 @@
 
 > A personal impact report skill for **Microsoft Copilot Cowork** — quantifies your leverage as a speed multiplier and professional-services equivalent value.
 
-![Report Hero](images/report-hero.png)
+![What Cowork Did for Me — sample report](images/cowork-roi-report-sample.gif)
+
+---
+
+## Get Started in 4 Steps
+
+1. **Download** [`cowork-roi-report-skill-v11.zip`](../../releases/latest) from the latest release. *(No need to unzip — attach it as-is.)*
+2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session.
+3. **Click the ➕ (plus) symbol** to attach the zip file, then send this prompt:
+
+   > **Add this skill.**
+
+4. Once it's added, ask:
+
+   > **Generate my impact summary report.**
+
+That's it. 🎉
+
+---
+
+## What you get out of it — your leverage, quantified
+
+**With Copilot Cowork, you operate like a professional-services team of one.** You bring the raw material — reports, spreadsheets, decks, data, transcripts — and Cowork analyzes it, synthesizes across sources, and produces finished deliverables in minutes instead of hours. This skill makes that leverage visible and defensible across three dimensions:
+
+- **⚡ Speed** — a research-anchored **speed multiplier** showing how much faster you moved *with* Cowork versus doing the same work unassisted (conservative / typical / optimistic).
+- **🎯 Quality** — the kind of **expert-grade outputs** Cowork helped you ship: analyst-style research syntheses, executive decks and documents, interactive dashboards and apps, scripts, and polished communications — each traced to a real artifact you produced.
+- **🧠 Expert assistance** — the professional **roles Cowork stood in for** — Data Analyst / Researcher, Content Writer, Software Engineer, Meeting Facilitator, Solutions Specialist, Communicator — converted into a **professional-services-equivalent dollar value** at your hourly rate.
+
+Every figure traces back to your own session artifacts in OneDrive — nothing is invented, and categories with no work in the window report zero. The result is a credible, shareable answer to *"What has Cowork actually done for me?"*
 
 ---
 
@@ -47,21 +75,6 @@ See where your time went across 8 task categories, plus a breakdown of what you 
 - **Methodology & glossary** — every band traceable, with clickable research sources
 - **Live hourly-rate control** — recalculates all dollar figures; speed multiplier is rate-independent
 - **Download PDF** button
-
----
-
-## Installation
-
- Let Cowork install it for you.
-
-1. **Download** the cowork-roi-report-skill zip file from the latest release
-2. **Open** [Copilot Cowork](https://copilot.cloud.microsoft/cowork)
-3. **Attach** the zip file to the chat and send this prompt:
-
-   > **Install the attached Cowork ROI Report skill into my personal skills.**
-
-4. Cowork will unpack and place the skill in the right location for you
-5. **Done!** In the same session (or a new one), ask: *"What did Cowork do for me?"*
 
 ---
 
