@@ -24,7 +24,7 @@ That's it. 🎉
 
 ## What you get out of it — your leverage, quantified
 
-**With Copilot Cowork, you operate like a professional-services team of one.** You bring the raw material — reports, spreadsheets, decks, data, transcripts — and Cowork analyzes it, synthesizes across sources, and produces finished deliverables in minutes instead of hours. This skill makes that leverage visible and defensible across three dimensions:
+**With Cowork, you operate like a multidisciplinary team.** You steer; Cowork brings in best-in-class experts from across fields, produces quality output, and does it at a pace far beyond what humans alone could match. This skill makes that leverage visible and defensible across three dimensions:
 
 - **⚡ Speed** — a research-anchored **speed multiplier** showing how much faster you moved *with* Cowork versus doing the same work unassisted (conservative / typical / optimistic).
 - **🎯 Quality** — the kind of **expert-grade outputs** Cowork helped you ship: analyst-style research syntheses, executive decks and documents, interactive dashboards and apps, scripts, and polished communications — each traced to a real artifact you produced.
@@ -36,7 +36,7 @@ Every figure traces back to your own session artifacts in OneDrive — nothing i
 
 ## What is this?
 
-**"What Cowork Did for Me"** is a skill for [Copilot Cowork](https://copilot.cloud.microsoft/cowork) that generates a polished, Microsoft-branded **single-file HTML report** from your own Cowork session history stored in OneDrive. It answers the question: *"How much time and value has Cowork given me?"*
+**"What Cowork Did for Me"** is a skill for [Copilot Cowork](https://copilot.cloud.microsoft/cowork) that generates a polished **single-file HTML report** from your own Cowork session history stored in OneDrive. It answers the question: *"How much time and value has Cowork given me?"*
 
 The skill:
 - Harvests your Cowork session artifacts (inputs analyzed & outputs produced) from OneDrive
@@ -63,18 +63,6 @@ See where Cowork drove business impact
 See where your time went across 8 task categories, plus a breakdown of what you fed Cowork vs. what it produced.
 
 ![Categories and Artifacts](images/report-categories.png)
-
-### Full Report Sections
-- **Hero** — speed multiplier (conservative/typical/optimistic) + professional-services value
-- **KPIs** — sessions, tasks, artifacts, active days, expert-equiv hours, hands-on hours
-- **By category** — research-anchored time-savings bars
-- **Analyzed → Produced** — sources in vs. deliverables out, with ingest/synthesize/author split
-- **Skills augmented** — professional roles Cowork covered for you
-- **Goals & leverage** — per-session goal with hours, value, and speed multiplier
-- **Activity heatmap** — day × hour collaboration pattern
-- **Methodology & glossary** — every band traceable, with clickable research sources
-- **Live hourly-rate control** — recalculates all dollar figures; speed multiplier is rate-independent
-- **Download PDF** button
 
 ---
 
