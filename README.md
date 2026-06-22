@@ -28,7 +28,7 @@ That's it. 🎉
 
 - **⚡ Speed** — a research-anchored **speed multiplier** showing how much faster you moved *with* Cowork versus doing the same work unassisted (conservative / typical / optimistic).
 - **🎯 Quality** — the kind of **expert-grade outputs** Cowork helped you ship: analyst-style research syntheses, executive decks and documents, interactive dashboards and apps, scripts, and polished communications — each traced to a real artifact you produced.
-- **🧠 Expert assistance** — the professional **roles Cowork stood in for** — Data Analyst / Researcher, Content Writer, Software Engineer, Meeting Facilitator, Solutions Specialist, Communicator — converted into a **professional-services-equivalent dollar value** at your hourly rate.
+- **🧠 Expert assistance** — the professional **skills Cowork put to work for you** — Presentation Design, Technical Writing, Data Analysis, Financial Modelling, Frontend Development, and more — rolled up into a **professional-services-equivalent dollar value** at your hourly rate.
 
 Every figure traces back to your own session artifacts in OneDrive — nothing is invented, and categories with no work in the window report zero. The result is a credible, shareable answer to *"What has Cowork actually done for me?"*
 
@@ -51,18 +51,30 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 ## Report Highlights
 
 ### Speed Multiplier & Value
-The report leads with a **speed multiplier** (how much faster Cowork made you vs. working unassisted) and a **professional-services equivalent** (what that expert time would cost at your hourly rate).
+The report leads with a **speed multiplier** (how much faster Cowork made you vs. an unassisted expert, shown as conservative / typical / optimistic) and a **professional-services equivalent** (what that expert time would cost at your hourly rate). A live hourly-rate control recalculates every dollar figure, and a **Download PDF** button exports the whole thing.
 
 ![KPIs and Speed Multiplier](images/report-kpis.png)
 
-### Business Processes 
-See where Cowork drove business impact
+### Value at a Glance
+A business-value table maps your impact to three pillars — **Improved Performance**, **Cost Savings**, and **Innovation** — each pairing a business outcome (lagging KPI) with a Cowork indicator (leading KPI) and your result. Headline KPIs follow: Cowork sessions, tasks completed, active days, expert-equivalent hours, and your estimated hands-on hours.
+
+### Work by Business Process & Task Category
+Every session is mapped to the **APQC business process** it advanced, its methodology task category, the deliverables it produced, the hours/value/speed it represents, and — where available — the **actual Cowork spend** for that session.
+
 ![Work Process](images/WorkProcess.png)
 
-### Category Breakdown & Analyzed → Produced
-See where your time went across 8 task categories, plus a breakdown of what you fed Cowork vs. what it produced.
+### Where the Time Went, Skills Augmented & Deliverables
+- **By task category** — research-anchored time-savings bars across the 8 categories.
+- **Skills augmented** — the professional skills Cowork put to work (Presentation Design, Technical Writing, Data Analysis, Financial Modelling, Frontend Development, …), each with the expert-equivalent hours it covered — turning time saved into *capability* without added headcount.
+- **Deliverables & the skills behind them** — every artifact Cowork produced, the skills that went into it, and the expert effort attributed to each.
+
+### Analyzed → Produced
+A breakdown of what you fed Cowork (sources in, by type) versus what it returned (deliverables out, by type), plus how many sources were distilled per deliverable.
 
 ![Categories and Artifacts](images/report-categories.png)
+
+### Methodology & Glossary
+Every number is traceable: an expandable methodology section and glossary explain each band and metric, with clickable links to the published research behind them.
 
 ---
 
