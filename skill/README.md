@@ -141,9 +141,9 @@ in the report's Glossary and in `build_report.py`.
 ## Output (HTML report sections)
 
 - **Hero** — speed multiplier (conservative/typical/optimistic) + professional-services value, with a live hourly-rate control and a Download-PDF button
-- **Value at a glance** — business-value table mapping impact to three pillars (Improved Performance, Cost Savings, Innovation), each pairing a business outcome (lagging KPI) with a Cowork indicator (leading KPI) and your result
+- **Value at a glance** — business-value table mapping impact to three **OneBVM (Business Value Model)** pillars (Improved Performance, Cost Savings, Innovation), each pairing a business outcome (lagging KPI) with a Cowork indicator (leading KPI) and your result
 - **KPIs** — Cowork sessions, tasks completed, active days, expert-equivalent hours, hands-on hours
-- **Work by business process & task category** — one row per session, mapped to its APQC business process, task category, deliverables, hours/value/speed, and (where available) actual Cowork spend
+- **Work by business process & task category** — one row per session, mapped to its APQC business process (grouped under its OneBVM value pillar), task category, deliverables, hours/value/speed, and (where available) actual Cowork spend
 - **By category** — where the expert-equivalent time went (research-anchored bars)
 - **Skills augmented** — the professional skills Cowork put to work (Presentation Design, Technical Writing, Data Analysis, Financial Modelling, Frontend Development, …), each with the expert-equivalent hours covered
 - **Deliverables & the skills behind them** — every artifact produced, the skills that went into it, and the expert effort attributed to each

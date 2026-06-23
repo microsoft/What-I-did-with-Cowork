@@ -56,10 +56,10 @@ The report leads with a **speed multiplier** (how much faster Cowork made you vs
 ![KPIs and Speed Multiplier](images/report-kpis.png)
 
 ### Value at a Glance
-A business-value table maps your impact to three pillars — **Improved Performance**, **Cost Savings**, and **Innovation** — each pairing a business outcome (lagging KPI) with a Cowork indicator (leading KPI) and your result. Headline KPIs follow: Cowork sessions, tasks completed, active days, expert-equivalent hours, and your estimated hands-on hours.
+A business-value table maps your impact to three **OneBVM (Business Value Model)** pillars — **Improved Performance**, **Cost Savings**, and **Innovation** — each pairing a business outcome (lagging KPI) with a Cowork indicator (leading KPI) and your result. Headline KPIs follow: Cowork sessions, tasks completed, active days, expert-equivalent hours, and your estimated hands-on hours.
 
 ### Work by Business Process & Task Category
-Every session is mapped to the **APQC business process** it advanced, its methodology task category, the deliverables it produced, the hours/value/speed it represents, and — where available — the **actual Cowork spend** for that session.
+Every session is mapped to the **APQC business process** it advanced — grouped under its **OneBVM value pillar** — along with its methodology task category, the deliverables it produced, the hours/value/speed it represents, and — where available — the **actual Cowork spend** for that session.
 
 ![Work Process](images/WorkProcess.png)
 
@@ -67,9 +67,6 @@ Every session is mapped to the **APQC business process** it advanced, its method
 - **By task category** — research-anchored time-savings bars across the 8 categories.
 - **Skills augmented** — the professional skills Cowork put to work (Presentation Design, Technical Writing, Data Analysis, Financial Modelling, Frontend Development, …), each with the expert-equivalent hours it covered — turning time saved into *capability* without added headcount.
 - **Deliverables & the skills behind them** — every artifact Cowork produced, the skills that went into it, and the expert effort attributed to each.
-
-### Analyzed → Produced
-A breakdown of what you fed Cowork (sources in, by type) versus what it returned (deliverables out, by type), plus how many sources were distilled per deliverable.
 
 ![Categories and Artifacts](images/report-categories.png)
 
