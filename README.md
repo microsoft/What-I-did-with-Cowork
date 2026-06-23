@@ -8,7 +8,7 @@
 
 ## Get Started in 4 Steps
 
-1. **Download** [`cowork-roi-report-skill-v11.zip`](../../releases/latest) from the latest release. *(No need to unzip — attach it as-is.)*
+1. **Download** [`cowork-roi-report-skill-v14.zip`](../../releases/latest) from the latest release. *(No need to unzip — attach it as-is.)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session.
 3. **Click the ➕ (plus) symbol** to attach the zip file, then send this prompt:
 
@@ -17,6 +17,8 @@
 4. Once it's added, ask:
 
    > **Generate my impact summary report.**
+
+   It'll ask one quick question — which period to measure (**7, 15, or 30 days**) — then build your report.
 
 That's it. 🎉
 
@@ -56,10 +58,10 @@ The report leads with a **speed multiplier** (how much faster Cowork made you vs
 ![KPIs and Speed Multiplier](images/report-kpis.png)
 
 ### Value at a Glance
-A business-value table maps your impact to three **OneBVM (Business Value Model)** pillars — **Improved Performance**, **Cost Savings**, and **Innovation** — each pairing a business outcome (lagging KPI) with a Cowork indicator (leading KPI) and your result. Headline KPIs follow: Cowork sessions, tasks completed, active days, expert-equivalent hours, and your estimated hands-on hours.
+A business-value table maps your impact to the **four value pillars** — **Revenue Growth**, **Cost Reduction**, **Risk Mitigation**, and **Transformation** — each pairing a business outcome (lagging KPI) with a Cowork indicator (leading KPI) and your result. Headline KPIs follow: Cowork sessions, tasks completed, active days, expert-equivalent hours, and your estimated hands-on hours.
 
 ### Work by Business Process & Task Category
-Every session is mapped to the **APQC business process** it advanced — grouped under its **OneBVM value pillar** — along with its methodology task category, the deliverables it produced, the hours/value/speed it represents, and — where available — the **actual Cowork spend** for that session.
+Each session is mapped to the **business process** it advanced and **banded by Job × Value Pillar**, with a *job-to-be-done (JTBD)* sub-line per row. The process taxonomy is **derived live for whoever runs the report** (from their own Microsoft 365 footprint via the bundled map-my-work playbook) — nothing is hard-coded to any individual; if the playbook isn't run, it falls back to the generic APQC business-process framework. Rows also show the task category, deliverables, and hours/value/speed. A **session-cost column** shows actual Cowork spend where captured, and **auto-hides** when no cost data is available. **Chat-only sessions** (no saved file) are counted too, via telemetry.
 
 ![Work Process](images/WorkProcess.png)
 
@@ -72,6 +74,21 @@ Every session is mapped to the **APQC business process** it advanced — grouped
 
 ### Methodology & Glossary
 Every number is traceable: an expandable methodology section and glossary explain each band and metric, with clickable links to the published research behind them.
+
+---
+
+## The Four Value Pillars
+
+Every session's impact is expressed in a shared business-value vocabulary, so leverage reads the same way across teams:
+
+| Pillar | Type | What it captures |
+|---|---|---|
+| **Revenue Growth** | Tangible · money coming in | Demand created, converted, and monetised — new opportunities, win rates, pricing, faster deal cycles. |
+| **Cost Reduction** | Tangible · money going out | Inefficiencies eliminated, manual work automated, spend optimised — direct savings or capacity redeployed. |
+| **Risk Mitigation** | Intangible · losses avoided | Issues detected earlier, controls improved, faster correction — financial, operational, and compliance risk reduced. |
+| **Transformation** | Intangible · new ways of working | Better/faster decisions, more responsive operations, stronger collaboration, and greater AI-workflow adoption. |
+
+The pillar for each session is set by an intent-verb rule (the work's job-to-be-done), falling back to the process default — never force-fit. Pillars with no qualifying work in the window render as zero, not hidden.
 
 ---
 
@@ -111,11 +128,11 @@ professional_services_value = (Σ expert_min / 60) × hourly_rate
 
 | Category | Low | Typical | High |
 |---|---:|---:|---:|
-| Analysis & Research | 30 | **71** | 92 |
+| Analysis & Research | 30 | **67** | 92 |
 | Document & content creation | 12 | **24** | 42 |
 | Email workflows | 3 | **7** | 12 |
-| Meeting workflows | 12 | **31** | 45 |
-| Communication workflows | 2 | **4** | 6 |
+| Meeting workflows | 12 | **31** | 43 |
+| Communication workflows | 2 | **4** | 11 |
 | Specialized workflows | 10 | **25** | 40 |
 | Write or debug code | 30 | **56** | 96 |
 | General assistance / Other | 2 | **5** | 8 |
@@ -128,17 +145,22 @@ Sources: Stanford-WB, Microsoft Research, NBER, Forrester — all clickable in t
 
 ```
 cowork-roi-report-skill/
-├── SKILL.md              # Skill definition + workflow (loaded by Cowork)
-├── README.md             # Technical documentation
-├── CHANGELOG-v5.md       # What changed in v5 and why
+├── SKILL.md                    # Skill definition + workflow (loaded by Cowork)
+├── README.md                   # Technical documentation
+├── CHANGELOG-v14.md            # Latest — plus v5 / v6 / v11 / v13 changelogs
+├── references/
+│   ├── map-my-work-playbook.md # Derives each user's Jobs ▸ Processes ▸ Pillars ▸ JTBD (runs inline)
+│   └── value-pillars.md        # Four-pillar crosswalk (single source of truth)
 ├── scripts/
-│   ├── mine_session.py   # Mines the live session transcript
-│   ├── classify.py       # Deterministic ext→category classifier
-│   ├── compute.py        # Applies the methodology → payload JSON
-│   └── build_report.py   # Renders the self-contained HTML report
+│   ├── mine_session.py         # Live-session telemetry (Stop hook)
+│   ├── statusline_cost.py      # Per-session cost capture (statusLine hook)
+│   ├── classify.py             # Category + business-process classifier
+│   ├── compute.py              # Applies the methodology → payload JSON
+│   ├── build_report.py         # Renders the self-contained HTML report
+│   ├── apqc_taxonomy.json      # Generic APQC business-process fallback
+│   └── skills_vocabulary.json  # Controlled DOMAIN + TECH skills vocabulary
 └── examples/
-    ├── sample_sessions.json   # Synthetic input (safe to share)
-    └── sample-report.html     # Rendered from the synthetic input
+    └── sample_sessions.json    # Synthetic input (safe to share)
 ```
 
 No third-party dependencies — **standard-library Python 3 only**.
