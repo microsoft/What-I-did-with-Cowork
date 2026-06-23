@@ -140,15 +140,15 @@ in the report's Glossary and in `build_report.py`.
 
 ## Output (HTML report sections)
 
-- **Hero** — speed multiplier (conservative/typical/optimistic) + professional-services value
-- **KPIs** — sessions, run tasks, artifacts, active days, expert-equiv hours, speed multiplier, hands-on hours
+- **Hero** — speed multiplier (conservative/typical/optimistic) + professional-services value, with a live hourly-rate control and a Download-PDF button
+- **Value at a glance** — business-value table mapping impact to three pillars (Improved Performance, Cost Savings, Innovation), each pairing a business outcome (lagging KPI) with a Cowork indicator (leading KPI) and your result
+- **KPIs** — Cowork sessions, tasks completed, active days, expert-equivalent hours, hands-on hours
+- **Work by business process & task category** — one row per session, mapped to its APQC business process, task category, deliverables, hours/value/speed, and (where available) actual Cowork spend
 - **By category** — where the expert-equivalent time went (research-anchored bars)
-- **Analyzed → Produced** — sources you fed in (by type) vs. deliverables produced (by type), with the ingest-vs-author time split (the consume/produce shape of your leverage)
-- **Skills augmented** roles
-- **Goals & leverage** — per-session goal with hours, value, and speed multiplier
-- **Activity heatmap** (day × hour)
+- **Skills augmented** — the professional skills Cowork put to work (Presentation Design, Technical Writing, Data Analysis, Financial Modelling, Frontend Development, …), each with the expert-equivalent hours covered
+- **Deliverables & the skills behind them** — every artifact produced, the skills that went into it, and the expert effort attributed to each
+- **Analyzed → Produced** — sources you fed in (by type) vs. deliverables produced (by type), with sources-distilled-per-deliverable
 - **Methodology & glossary** — every band traceable, with clickable research sources
-- A **live hourly-rate control** recalculates all dollar figures; the speed multiplier is rate-independent
 
 ---
 
