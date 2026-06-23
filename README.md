@@ -1,6 +1,6 @@
 # What Cowork Did for Me
 
-> A personal impact report skill for **Microsoft Copilot Cowork** — quantifies your leverage as a speed multiplier and professional-services equivalent value.
+> A personal impact report skill for **Microsoft Copilot Cowork** — quantifies your leverage as research-anchored **time saved** and its **professional-services-equivalent value**.
 
 ![What Cowork Did for Me — sample report](images/cowork-roi-report-sample.gif)
 
@@ -8,7 +8,7 @@
 
 ## Get Started in 4 Steps
 
-1. **Download** [`cowork-roi-report-skill-v14.zip`](../../releases/latest) from the latest release. *(No need to unzip — attach it as-is.)*
+1. **Download** [`cowork-roi-report-skill-v15.zip`](../../releases/latest) from the latest release. *(No need to unzip — attach it as-is.)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session.
 3. **Click the ➕ (plus) symbol** to attach the zip file, then send this prompt:
 
@@ -28,7 +28,7 @@ That's it. 🎉
 
 **With Cowork, you operate like a multidisciplinary team.** You steer; Cowork brings in best-in-class experts from across fields, produces quality output, and does it at a pace far beyond what humans alone could match. This skill makes that leverage visible and defensible across three dimensions:
 
-- **⚡ Speed** — a research-anchored **speed multiplier** showing how much faster you moved *with* Cowork versus doing the same work unassisted (conservative / typical / optimistic).
+- **⚡ Speed** — the **time saved**, anchored entirely in published research: the sum of per-task expert bands for everything Cowork ran for you (conservative / typical / optimistic). A **speed multiplier** rides alongside as a secondary, directional read on how much faster you moved.
 - **🎯 Quality** — the kind of **expert-grade outputs** Cowork helped you ship: analyst-style research syntheses, executive decks and documents, interactive dashboards and apps, scripts, and polished communications — each traced to a real artifact you produced.
 - **🧠 Expert assistance** — the professional **skills Cowork put to work for you** — Presentation Design, Technical Writing, Data Analysis, Financial Modelling, Frontend Development, and more — rolled up into a **professional-services-equivalent dollar value** at your hourly rate.
 
@@ -43,7 +43,7 @@ Every figure traces back to your own session artifacts in OneDrive — nothing i
 The skill:
 - Harvests your Cowork session artifacts (inputs analyzed & outputs produced) from OneDrive
 - Classifies work into 8 research-anchored task categories
-- Applies an **artifact-scaled two-clock model** to compute your speed multiplier
+- Sums the **cited per-task bands** into research-anchored **time saved**, then values it at your hourly rate
 - Renders a self-contained, interactive HTML report you can share or print to PDF
 
 Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-Did-Copilot), adapted for Copilot Cowork.
@@ -52,8 +52,8 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 
 ## Report Highlights
 
-### Speed Multiplier & Value
-The report leads with a **speed multiplier** (how much faster Cowork made you vs. an unassisted expert, shown as conservative / typical / optimistic) and a **professional-services equivalent** (what that expert time would cost at your hourly rate). A live hourly-rate control recalculates every dollar figure, and a **Download PDF** button exports the whole thing.
+### Time Saved & Value
+The report leads with research-anchored **Time Saved** — the sum of the cited per-task bands for everything Cowork ran (conservative / typical / optimistic) — and its **professional-services-equivalent Value** at your hourly rate. A **speed multiplier** appears as a clearly-labelled *secondary, directional* stat (its hands-on denominator is modeled, not a stopwatch). A live hourly-rate control recalculates every dollar figure, and a **Download PDF** button exports the whole thing.
 
 ![KPIs and Speed Multiplier](images/report-kpis.png)
 
@@ -104,7 +104,7 @@ The skill will:
 1. **Ask** which period to measure (7, 15, or 30 days) and whether to automate
 2. **Harvest** your Cowork session files from OneDrive
 3. **Classify** each session using the deterministic extension-based classifier
-4. **Compute** the two-clock model (expert clock vs. assisted clock)
+4. **Compute** research-anchored Time Saved (Σ cited bands) and Value, plus a secondary speed multiplier
 5. **Render** a beautiful HTML report
 6. **Optionally automate** on a recurring schedule with email digest
 
@@ -112,16 +112,18 @@ The skill will:
 
 ## Methodology
 
-The skill uses a **two-clock model** anchored in published research:
-
-| Clock | What it measures |
-|---|---|
-| **Expert (unassisted)** | How long a professional would take without AI — research-anchored category bands + reading time per source + authoring time per deliverable |
-| **Assisted (your time)** | Modeled hands-on effort: `8 min + 2 min × (inputs + outputs)`, floor 4 min |
+**Time Saved is purely research-anchored.** What a professional would take with no AI is simply the **sum of the cited band for each task** in a session — nothing else. There are no read-time or authoring assumptions, so every minute traces to a published study.
 
 ```
-speed_multiplier            = Σ expert_min / Σ assisted_min        (rate-independent)
-professional_services_value = (Σ expert_min / 60) × hourly_rate
+time_saved_min = Σ CATS[task].typical        # e.g. Analysis (67) + Document (24) = 91 min
+Time Saved (hrs) = Σ time_saved_min / 60      # Conservative / Optimistic re-sum the low / high bands
+Value            = Time Saved hrs × hourly_rate
+```
+
+**Speed multiplier (secondary, directional).** Dividing Time Saved by a *modeled* hands-on clock gives a speed multiplier. That assisted clock — `8 min + 2 min × (inputs + outputs)`, floor 4 — is the one non-research input (OneDrive can't measure keystroke time), so the multiplier is directional, not a stopwatch (it's *measured* for sessions where the telemetry hook is on):
+
+```
+speed_multiplier = Σ time_saved_min / Σ assisted_min        (rate-independent · secondary)
 ```
 
 ### Research-anchored category bands (min saved / task)
@@ -147,7 +149,7 @@ Sources: Stanford-WB, Microsoft Research, NBER, Forrester — all clickable in t
 cowork-roi-report-skill/
 ├── SKILL.md                    # Skill definition + workflow (loaded by Cowork)
 ├── README.md                   # Technical documentation
-├── CHANGELOG-v14.md            # Latest — plus v5 / v6 / v11 / v13 changelogs
+├── CHANGELOG-v15.md            # Latest — plus v5 / v6 / v11 / v13 / v14 changelogs
 ├── references/
 │   ├── map-my-work-playbook.md # Derives each user's Jobs ▸ Processes ▸ Pillars ▸ JTBD (runs inline)
 │   └── value-pillars.md        # Four-pillar crosswalk (single source of truth)
@@ -169,8 +171,8 @@ No third-party dependencies — **standard-library Python 3 only**.
 
 ## Caveats
 
-- The **assisted clock is modeled**, not measured — OneDrive records artifacts, not keystroke time. Treat the multiplier as **directional**, not a stopwatch.
-- Categories with **no saved artifacts** in the window report **zero** — keeping totals a conservative floor.
+- **Time Saved & Value are research-anchored** (cited per-task bands). The **speed multiplier's** assisted clock is **modeled**, not measured — OneDrive records artifacts, not keystroke time — so treat the multiplier as **directional**, not a stopwatch.
+- Categories with **no tasks** in the window report **zero** — keeping totals a conservative floor.
 - Counting stays conservative: ~2 run tasks per session; supporting files folded into the primary task.
 
 ---

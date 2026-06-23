@@ -1,16 +1,18 @@
 # Cowork ROI — Personal Impact Report (skill)
 
 Generates a **"What Cowork Did for Me"** single-file HTML report from a user's own
-Copilot Cowork session history in OneDrive. It quantifies the leverage Cowork provided
-as a **speed multiplier** and a **professional-services-equivalent value**, using an
-artifact-scaled time model anchored in published research.
+Copilot Cowork session history in OneDrive. It leads with research-anchored **Time Saved**
+and its **professional-services-equivalent value**, then maps the work to the user's own
+Jobs, Business Processes, and the four Value Pillars.
 
-> **v14 (single self-contained skill).** The package is one self-contained skill — the
-> standard *attach-zip → "Add this skill"* flow installs it cleanly. The `map-my-work`
+> **v15 (purely research-anchored time).** Time Saved is now simply the **sum of the cited
+> per-task bands** (e.g. Analysis 67 + Document 24 = 91 min). The old un-cited read-time /
+> authoring heuristics are **removed**, and the **speed multiplier is demoted to a clearly-
+> labelled secondary, directional stat**. The package remains one self-contained skill — the
+> standard *attach-zip → "Add this skill"* flow installs it cleanly; the `map-my-work`
 > workflow-mapping logic is **folded in as bundled references** (`references/`) and runs
-> **inline** to derive each user's own Jobs ▸ Business Processes ▸ Value Pillars ▸ JTBD —
-> no separate skill install, still fully personalized per user. See
-> [`CHANGELOG-v14.md`](CHANGELOG-v14.md) (and v13 / v11 / v6 / v5) for the history.
+> **inline** to derive each user's own Jobs ▸ Business Processes ▸ Value Pillars ▸ JTBD. See
+> [`CHANGELOG-v15.md`](CHANGELOG-v15.md) (and v14 / v13 / v11 / v6 / v5) for the history.
 
 ---
 
@@ -20,7 +22,8 @@ artifact-scaled time model anchored in published research.
 cowork-roi-report/
 ├── SKILL.md                     # skill definition + workflow (loaded by Cowork)
 ├── README.md                    # this file
-├── CHANGELOG-v14.md             # latest — single self-contained skill, four value pillars
+├── CHANGELOG-v15.md             # latest — purely research-anchored Time Saved; multiplier demoted
+├── CHANGELOG-v14.md             # single self-contained skill, four value pillars
 ├── CHANGELOG-v13.md             # bundle + rich {process, pillar, job, jtbd} override
 ├── CHANGELOG-v11.md             # TF-IDF APQC classifier, skills-augmented, cost capture
 ├── CHANGELOG-v6.md / -v5.md     # earlier history
@@ -41,7 +44,7 @@ cowork-roi-report/
 
 ## Install
 
-1. **Download** `cowork-roi-report-skill-v14.zip` from the latest release. *(No need to unzip — attach it as-is.)*
+1. **Download** `cowork-roi-report-skill-v15.zip` from the latest release. *(No need to unzip — attach it as-is.)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session.
 3. **Click the ➕ (plus) symbol** to attach the zip, then send: **"Add this skill."**
 4. Once it's added, ask: **"Generate my impact summary report."** It'll ask one quick question — which period to measure (**7, 15, or 30 days**) — then build your report.
@@ -114,37 +117,34 @@ The skill harvests Cowork session workspaces from OneDrive
 
 ---
 
-## Methodology — the two-clock model
+## Methodology — research-anchored Time Saved
 
-Each session is scored on two clocks; the ratio is the speed multiplier.
-
-**Expert clock (unassisted)** — what a professional would take with no AI:
-
-```
-expert_min =  Σ analysis-band per analysis task        (research-anchored, v4)
-            + Σ general-band per general task
-            + Σ read_time(input)     ( 12 min / document,  5 min / image )
-            + Σ author_time(output)  ( deck 45 · doc 40 · sheet|page|code 35 · other 30 )
-```
-
-`document` tasks contribute **only** through their output authoring time (so authoring is
-never double-counted with the analysis band).
-
-**Assisted clock (your time)** — a modeled estimate of hands-on effort:
+**Time Saved (expert-equivalent)** — what a professional would take with no AI — is simply the
+**sum of the research-anchored band for each task** in a session. Nothing else: no read-time or
+authoring assumptions, so every minute traces to a cited study.
 
 ```
-assisted_min = 8  (fixed prompt/setup)  +  2 × (num inputs + num outputs)     (floor 4)
+time_saved_min = Σ CATS[task].typical        # e.g. Analysis (67) + Document (24) = 91 min
 ```
 
-**Headline metrics:**
+The **Conservative / Optimistic** range re-sums the published **low** / **high** band per task.
+
+**Headline metrics (both fully research-anchored):**
 
 ```
-speed_multiplier            = Σ expert_min / Σ assisted_min          (rate-independent)
-professional_services_value = (Σ expert_min / 60) × hourly_rate
+Time Saved (hours) = Σ time_saved_min / 60
+Value              = Time Saved hours × hourly_rate
 ```
 
-**Conservative / Optimistic range** re-runs the expert clock with the published floor/ceiling
-analysis bands and lighter/heavier read & authoring weights.
+**Speed multiplier (secondary, directional).** Dividing Time Saved by a *modeled* hands-on clock
+gives a speed multiplier. The assisted clock is the one non-research input — OneDrive can't measure
+keystroke time — so the multiplier is directional, not a stopwatch (it is *measured* for sessions
+where the telemetry hook is enabled):
+
+```
+assisted_min     = 8 (prompt/setup) + 2 × (num inputs + outputs)   ·  floor 4   [modeled]
+speed_multiplier = Σ time_saved_min / Σ assisted_min               (rate-independent · secondary)
+```
 
 ### Research-anchored category bands (min saved / task)
 
@@ -166,14 +166,14 @@ in the report's Glossary and in `build_report.py`.
 
 ## Output (HTML report sections)
 
-- **Hero** — speed multiplier (conservative/typical/optimistic) + professional-services value, with a live hourly-rate control and a Download-PDF button
+- **Hero** — research-anchored **Time Saved** (conservative/typical/optimistic) + professional-services **Value**, with a live hourly-rate control and a Download-PDF button. The **speed multiplier** rides alongside as a clearly-labelled secondary, directional stat.
 - **Value at a glance** — business-value table mapping impact to the **four value pillars** (Revenue Growth · Cost Reduction · Risk Mitigation · Transformation), each pairing a business outcome (lagging KPI) with a Cowork indicator (leading KPI) and your result
 - **KPIs** — Cowork sessions, tasks completed, active days, expert-equivalent hours, hands-on hours
 - **Work by business process** — one row per session, **banded by Job × Value Pillar** with a *job-to-be-done (JTBD)* sub-line. The process taxonomy is **derived live per user** by the bundled map-my-work playbook (from their own M365 footprint) — nothing hard-coded; falls back to the generic APQC framework if the playbook isn't run. A **session-cost column** shows actual Cowork spend where captured, and **auto-hides** when no session has cost data. **Chat-only sessions** (no saved file) are counted via telemetry.
 - **By category** — where the expert-equivalent time went (research-anchored bars)
 - **Skills augmented** — the professional skills Cowork put to work (Presentation Design, Technical Writing, Data Analysis, Financial Modelling, Frontend Development, …), each with the expert-equivalent hours covered — turning time saved into *capability* without added headcount
-- **Deliverables & the skills behind them** — every artifact produced, the skills that went into it, and the expert effort attributed to each
-- **Analyzed → Produced** — sources you fed in (by type) vs. deliverables produced (by type), with sources-distilled-per-deliverable
+- **Deliverables & the skills behind them** — every artifact produced, the skills that went into it, and the expert effort attributed to each (per-deliverable hours = an equal share of the session's expert time, so they sum back to the total)
+- **Analyzed → Produced** — sources you fed in vs. deliverables produced, shown as **counts by type** (the assumption-based ingest/analyze/author minute split was dropped in v15)
 - **Methodology & glossary** — every band traceable, with clickable research sources
 
 ---
@@ -228,8 +228,9 @@ session) so the harness picks them up.
   JTBD taxonomy is derived live from whoever runs the report (their own M365 footprint) — nothing in
   this skill is hard-coded or borrowed from another person. Calendar items marked private surface only
   as a time block; the skill maps work, it never scores or ranks people.
-- The **assisted clock is modeled**, not measured — OneDrive records artifacts, not keystroke time.
-  Treat the multiplier as **directional**, not a stopwatch.
-- Categories with **no saved artifacts** in the window are reported as **zero**, keeping totals a
+- **Time Saved & Value are research-anchored** (cited per-task bands). The **speed multiplier's**
+  assisted clock is **modeled**, not measured — OneDrive records artifacts, not keystroke time —
+  so treat the multiplier as **directional**, not a stopwatch.
+- Categories with **no tasks** in the window are reported as **zero**, keeping totals a
   conservative floor.
 - Counting stays conservative: ~2 run tasks per session; supporting files folded into the primary task.
