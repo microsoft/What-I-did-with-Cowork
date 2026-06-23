@@ -5,14 +5,16 @@ Copilot Cowork session history in OneDrive. It leads with research-anchored **Ti
 and its **professional-services-equivalent value**, then maps the work to the user's own
 Jobs, Business Processes, and the four Value Pillars.
 
-> **v15 (purely research-anchored time).** Time Saved is now simply the **sum of the cited
-> per-task bands** (e.g. Analysis 67 + Document 24 = 91 min). The old un-cited read-time /
-> authoring heuristics are **removed**, and the **speed multiplier is demoted to a clearly-
-> labelled secondary, directional stat**. The package remains one self-contained skill — the
-> standard *attach-zip → "Add this skill"* flow installs it cleanly; the `map-my-work`
-> workflow-mapping logic is **folded in as bundled references** (`references/`) and runs
-> **inline** to derive each user's own Jobs ▸ Business Processes ▸ Value Pillars ▸ JTBD. See
-> [`CHANGELOG-v15.md`](CHANGELOG-v15.md) (and v14 / v13 / v11 / v6 / v5) for the history.
+> **v17 (two-lens work-by-process + professional roles).** The **Work by business process** section
+> is now one row per **project Cowork delivered** (task-category column dropped) with a toggle between
+> two lenses — **By Job-to-be-Done** (indented Job ▸ Business Process ▸ JTBD ▸ Project) and **By
+> Business Value Pillar** (Pillar · Project · Assistance). A **Roles Cowork assembled for me** section
+> (v16) lists the *exact professional roles a billing firm would charge* (LLM-tagged per session,
+> 16-role keyword fallback, ported from `microsoft/What-I-Did-Copilot`). Time Saved remains the **sum
+> of the cited per-task bands** with the **speed multiplier as a secondary, directional stat** (v15).
+> One self-contained skill; `map-my-work` is **folded in as bundled references** (`references/`) and
+> runs **inline** to derive each user's own Jobs ▸ Business Processes ▸ Value Pillars ▸ JTBD. See
+> [`CHANGELOG-v17.md`](CHANGELOG-v17.md) (and v16 / v15 / v14 / v13 / v11 / v6 / v5) for the history.
 
 ---
 
@@ -22,14 +24,16 @@ Jobs, Business Processes, and the four Value Pillars.
 cowork-roi-report/
 ├── SKILL.md                     # skill definition + workflow (loaded by Cowork)
 ├── README.md                    # this file
-├── CHANGELOG-v15.md             # latest — purely research-anchored Time Saved; multiplier demoted
+├── CHANGELOG-v17.md             # latest — two-lens (JTBD / Value Pillar) work-by-process
+├── CHANGELOG-v16.md             # professional roles a billing firm would charge; process redesign
+├── CHANGELOG-v15.md             # purely research-anchored Time Saved; multiplier demoted
 ├── CHANGELOG-v14.md             # single self-contained skill, four value pillars
 ├── CHANGELOG-v13.md             # bundle + rich {process, pillar, job, jtbd} override
 ├── CHANGELOG-v11.md             # TF-IDF APQC classifier, skills-augmented, cost capture
 ├── CHANGELOG-v6.md / -v5.md     # earlier history
 ├── references/
 │   ├── map-my-work-playbook.md  # derives the user's own taxonomy (runs inline at step 4b)
-│   └── value-pillars.md         # four-pillar crosswalk — single source of truth
+│   └── value-pillars.md         # four-pillar (OneBVM) crosswalk — single source of truth
 ├── scripts/
 │   ├── mine_session.py          # live-session telemetry (Stop hook): exec_min, tool intensity, artifacts
 │   ├── statusline_cost.py       # per-session cost capture (statusLine hook)
@@ -37,6 +41,7 @@ cowork-roi-report/
 │   ├── compute.py               # applies the methodology -> payload JSON
 │   ├── build_report.py          # renders the self-contained HTML report
 │   ├── apqc_taxonomy.json       # generic APQC 13 fallback (used when map-my-work isn't run)
+│   ├── roles_taxonomy.json      # 16-role keyword fallback for "roles assembled"
 │   └── skills_vocabulary.json   # controlled DOMAIN_SKILLS + TECH_SKILLS vocabulary
 └── examples/
     └── sample_sessions.json     # synthetic input (safe to share)
@@ -44,7 +49,7 @@ cowork-roi-report/
 
 ## Install
 
-1. **Download** `cowork-roi-report-skill-v15.zip` from the latest release. *(No need to unzip — attach it as-is.)*
+1. **Download** `cowork-roi-report-skill-v17.zip` from the latest release. *(No need to unzip — attach it as-is.)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session.
 3. **Click the ➕ (plus) symbol** to attach the zip, then send: **"Add this skill."**
 4. Once it's added, ask: **"Generate my impact summary report."** It'll ask one quick question — which period to measure (**7, 15, or 30 days**) — then build your report.
@@ -84,6 +89,7 @@ The skill harvests Cowork session workspaces from OneDrive
       "outputs": [ {"name": "deck.pptx", "ext": "pptx",
                     "skills": ["Presentation Design", "Data Analysis"] } ], // produced + skills tags
       "skills":  ["Stakeholder Communication"],                       // session-level (chat-only) skills
+      "professional_roles": ["Data Analyst", "Management Consultant"], // roles a billing firm would charge
       "tasks":   ["analysis", "document"],                            // category keys
       "has_folder": true,
       "exec_min": 22                                                  // measured run time (telemetry), or null
@@ -98,6 +104,10 @@ The skill harvests Cowork session workspaces from OneDrive
   `skills:[...]`. `compute.py` rolls these into the *Skills augmented* bars and the per-deliverable
   table. Without tags those tables render empty. Tag conservatively, evidence-based — never invent
   a skill outside the vocabulary.
+- **Professional roles (for the *Roles assembled* section).** Tag each session with 1–2
+  `professional_roles` — the roles a billing firm would charge for that work. When none are tagged,
+  `compute.py` falls back to the 16-role keyword taxonomy in `scripts/roles_taxonomy.json`; expert
+  time is split across a session's roles.
 - **Business process / pillar overrides (`scripts/process_overrides.json`).** Written *before*
   `classify.py` runs, this maps each session id to a **rich tuple** derived live by the map-my-work
   playbook (back-compat: a plain `"<id>": "Process"` string is still accepted):
@@ -169,8 +179,12 @@ in the report's Glossary and in `build_report.py`.
 - **Hero** — research-anchored **Time Saved** (conservative/typical/optimistic) + professional-services **Value**, with a live hourly-rate control and a Download-PDF button. The **speed multiplier** rides alongside as a clearly-labelled secondary, directional stat.
 - **Value at a glance** — business-value table mapping impact to the **four value pillars** (Revenue Growth · Cost Reduction · Risk Mitigation · Transformation), each pairing a business outcome (lagging KPI) with a Cowork indicator (leading KPI) and your result
 - **KPIs** — Cowork sessions, tasks completed, active days, expert-equivalent hours, hands-on hours
-- **Work by business process** — one row per session, **banded by Job × Value Pillar** with a *job-to-be-done (JTBD)* sub-line. The process taxonomy is **derived live per user** by the bundled map-my-work playbook (from their own M365 footprint) — nothing hard-coded; falls back to the generic APQC framework if the playbook isn't run. A **session-cost column** shows actual Cowork spend where captured, and **auto-hides** when no session has cost data. **Chat-only sessions** (no saved file) are counted via telemetry.
+- **Work by business process — two lenses, one toggle.** One row per **project Cowork delivered** (the task-category column is gone from this section). Toggle between:
+  - **By Job-to-be-Done** — an indented **Job ▸ Business Process ▸ JTBD ▸ Project** hierarchy (each level chip-labelled JOB / PROCESS / JTBD / PROJECTS), each project showing its assistance inline (expert-equivalent hours saved · value · speed).
+  - **By Business Value Pillar** — a 3-column table: **Business value pillar · Project · Assistance offered** (pillar shown once per group).
+  The taxonomy is **derived live per user** by the bundled map-my-work playbook (from their own M365 footprint) — nothing hard-coded; falls back to the generic APQC framework if the playbook isn't run. A **session-cost column** shows actual Cowork spend where captured, and **auto-hides** when no session has cost data. **Chat-only sessions** (no saved file) are counted via telemetry.
 - **By category** — where the expert-equivalent time went (research-anchored bars)
+- **Roles Cowork assembled for me** — the **exact professional roles a billing firm would charge** for the work (Data Analyst, Management Consultant, Software Engineer, Risk & Compliance Analyst, …), each **linked** to a job-title search, with the expert-equivalent hours covered. Roles are **LLM-tagged per session** (`professional_roles`), with a 16-role keyword taxonomy (`scripts/roles_taxonomy.json`) as fallback. *(Ported from `microsoft/What-I-Did-Copilot`.)*
 - **Skills augmented** — the professional skills Cowork put to work (Presentation Design, Technical Writing, Data Analysis, Financial Modelling, Frontend Development, …), each with the expert-equivalent hours covered — turning time saved into *capability* without added headcount
 - **Deliverables & the skills behind them** — every artifact produced, the skills that went into it, and the expert effort attributed to each (per-deliverable hours = an equal share of the session's expert time, so they sum back to the total)
 - **Analyzed → Produced** — sources you fed in vs. deliverables produced, shown as **counts by type** (the assumption-based ingest/analyze/author minute split was dropped in v15)
@@ -180,7 +194,8 @@ in the report's Glossary and in `build_report.py`.
 
 ## Business value — the four value pillars
 
-Every session's impact is expressed in one shared vocabulary, defined once in
+Every session's impact is expressed in one shared vocabulary based on Microsoft's
+**[OneBVM (One Business Value Model)](https://aka.ms/OneBVM)** methodology, defined once in
 [`references/value-pillars.md`](references/value-pillars.md) (the single source of truth, shared
 with the map-my-work playbook):
 

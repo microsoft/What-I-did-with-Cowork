@@ -8,7 +8,7 @@
 
 ## Get Started in 4 Steps
 
-1. **Download** [`cowork-roi-report-skill-v15.zip`](../../releases/latest) from the latest release. *(No need to unzip — attach it as-is.)*
+1. **Download** [`cowork-roi-report-skill-v17.zip`](../../releases/latest) from the latest release. *(No need to unzip — attach it as-is.)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session.
 3. **Click the ➕ (plus) symbol** to attach the zip file, then send this prompt:
 
@@ -60,10 +60,18 @@ The report leads with research-anchored **Time Saved** — the sum of the cited 
 ### Value at a Glance
 A business-value table maps your impact to the **four value pillars** — **Revenue Growth**, **Cost Reduction**, **Risk Mitigation**, and **Transformation** — each pairing a business outcome (lagging KPI) with a Cowork indicator (leading KPI) and your result. Headline KPIs follow: Cowork sessions, tasks completed, active days, expert-equivalent hours, and your estimated hands-on hours.
 
-### Work by Business Process & Task Category
-Each session is mapped to the **business process** it advanced and **banded by Job × Value Pillar**, with a *job-to-be-done (JTBD)* sub-line per row. The process taxonomy is **derived live for whoever runs the report** (from their own Microsoft 365 footprint via the bundled map-my-work playbook) — nothing is hard-coded to any individual; if the playbook isn't run, it falls back to the generic APQC business-process framework. Rows also show the task category, deliverables, and hours/value/speed. A **session-cost column** shows actual Cowork spend where captured, and **auto-hides** when no cost data is available. **Chat-only sessions** (no saved file) are counted too, via telemetry.
+### Work by Business Process — two lenses
+This section presents one row per **project Cowork delivered** (not task categories), and you **toggle between two lenses**:
+
+- **By Job-to-be-Done** — an indented **Job ▸ Business Process ▸ JTBD ▸ Project** hierarchy (each level chip-labelled), with every project's assistance inline: expert-equivalent hours saved · value · speed.
+- **By Business Value Pillar** — a clean three-column table: **Business value pillar · Project · Assistance offered**.
+
+The process/job/JTBD taxonomy is **derived live for whoever runs the report** (from their own Microsoft 365 footprint via the bundled map-my-work playbook) — nothing is hard-coded to any individual; if the playbook isn't run, it falls back to the generic APQC business-process framework. A **session-cost column** shows actual Cowork spend where captured, and **auto-hides** when no cost data is available. **Chat-only sessions** (no saved file) are counted too, via telemetry.
 
 ![Work Process](images/WorkProcess.png)
+
+### Roles Cowork Assembled for Me
+A breakdown of the **exact professional roles a billing firm would charge** for your work — Data Analyst, Management Consultant, Software Engineer, Risk & Compliance Analyst, and more — each **linked to a job-title search** and credited with the expert-equivalent hours it covered. Roles are LLM-tagged per session, with a 16-role keyword taxonomy as fallback. *(Logic ported from [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-Did-Copilot).)*
 
 ### Where the Time Went, Skills Augmented & Deliverables
 - **By task category** — research-anchored time-savings bars across the 8 categories.
@@ -79,7 +87,7 @@ Every number is traceable: an expandable methodology section and glossary explai
 
 ## The Four Value Pillars
 
-Every session's impact is expressed in a shared business-value vocabulary, so leverage reads the same way across teams:
+Every session's impact is expressed in a shared business-value vocabulary, so leverage reads the same way across teams. These four pillars are based on Microsoft's **[OneBVM (One Business Value Model)](https://aka.ms/OneBVM)** methodology:
 
 | Pillar | Type | What it captures |
 |---|---|---|
@@ -149,7 +157,7 @@ Sources: Stanford-WB, Microsoft Research, NBER, Forrester — all clickable in t
 cowork-roi-report-skill/
 ├── SKILL.md                    # Skill definition + workflow (loaded by Cowork)
 ├── README.md                   # Technical documentation
-├── CHANGELOG-v15.md            # Latest — plus v5 / v6 / v11 / v13 / v14 changelogs
+├── CHANGELOG-v17.md            # Latest — plus v5 / v6 / v11 / v13 / v14 / v15 / v16 changelogs
 ├── references/
 │   ├── map-my-work-playbook.md # Derives each user's Jobs ▸ Processes ▸ Pillars ▸ JTBD (runs inline)
 │   └── value-pillars.md        # Four-pillar crosswalk (single source of truth)
@@ -160,6 +168,7 @@ cowork-roi-report-skill/
 │   ├── compute.py              # Applies the methodology → payload JSON
 │   ├── build_report.py         # Renders the self-contained HTML report
 │   ├── apqc_taxonomy.json      # Generic APQC business-process fallback
+│   ├── roles_taxonomy.json     # 16-role keyword fallback for "roles assembled"
 │   └── skills_vocabulary.json  # Controlled DOMAIN + TECH skills vocabulary
 └── examples/
     └── sample_sessions.json    # Synthetic input (safe to share)
