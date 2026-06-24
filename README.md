@@ -8,7 +8,7 @@
 
 ## Get Started in 4 Steps
 
-1. **Download** [`cowork-roi-report-skill-v17.zip`](../../releases/latest) from the latest release. *(No need to unzip — attach it as-is.)*
+1. **Download** [`cowork-roi-report-skill-v18.zip`](../../releases/latest) from the latest release. *(No need to unzip — attach it as-is.)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session.
 3. **Click the ➕ (plus) symbol** to attach the zip file, then send this prompt:
 
@@ -41,12 +41,24 @@ Every figure traces back to your own session artifacts in OneDrive — nothing i
 **"What Cowork Did for Me"** is a skill for [Copilot Cowork](https://copilot.cloud.microsoft/cowork) that generates a polished **single-file HTML report** from your own Cowork session history stored in OneDrive. It answers the question: *"How much time and value has Cowork given me?"*
 
 The skill:
-- Harvests your Cowork session artifacts (inputs analyzed & outputs produced) from OneDrive
+- Harvests your Cowork session artifacts (inputs analyzed & outputs produced) from OneDrive — across **all three** `Documents/Cowork/` folder layouts, counting **only items created by the Cowork app** so unrelated activity (e.g. M365 Copilot/Scout) is excluded (see [Harvest scope](#harvest-scope--what-counts-as-cowork-activity))
 - Classifies work into 8 research-anchored task categories
 - Sums the **cited per-task bands** into research-anchored **time saved**, then values it at your hourly rate
 - Renders a self-contained, interactive HTML report you can share or print to PDF
 
 Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-Did-Copilot), adapted for Copilot Cowork.
+
+---
+
+## Harvest scope — what counts as Cowork activity
+
+The report measures **only Cowork** work, by **allow-list** — not by trying to recognise and subtract everything else *(new in v18)*:
+
+- **Reads only `Documents/Cowork/`**, across **all three** folder layouts the product has used: `Tasks/<goal>-<date>/`, root `<goal>-<date>/`, and legacy `sessions/<uuid>/` (each with `input/` + `output/`). Earlier versions only read the legacy layout and under-counted recent work.
+- **Counts only items created by the Cowork app** (`createdBy.application.id = 6ab48b67-…`) — the same product app id for every user and tenant, so it needs no per-user configuration.
+- **Never enumerates `Documents/Apps/…`.** That tree is the **M365 Copilot app running Scout** (scheduled heartbeats, monitors, executive briefings) — *not* Cowork — and is excluded automatically, with no instance-specific name list to maintain.
+
+Why allow-list, not deny-list: a "find Scout and remove it" rule keys on instance names that differ per user and break on the next account. Scoping *positively* to Cowork-app-created artifacts generalises cleanly.
 
 ---
 
@@ -157,7 +169,7 @@ Sources: Stanford-WB, Microsoft Research, NBER, Forrester — all clickable in t
 cowork-roi-report-skill/
 ├── SKILL.md                    # Skill definition + workflow (loaded by Cowork)
 ├── README.md                   # Technical documentation
-├── CHANGELOG-v17.md            # Latest — plus v5 / v6 / v11 / v13 / v14 / v15 / v16 changelogs
+├── CHANGELOG-v18.md            # Latest — plus v5 / v6 / v11 / v13 / v14 / v15 / v16 changelogs
 ├── references/
 │   ├── map-my-work-playbook.md # Derives each user's Jobs ▸ Processes ▸ Pillars ▸ JTBD (runs inline)
 │   └── value-pillars.md        # Four-pillar crosswalk (single source of truth)

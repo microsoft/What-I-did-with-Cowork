@@ -5,8 +5,18 @@ Copilot Cowork session history in OneDrive. It leads with research-anchored **Ti
 and its **professional-services-equivalent value**, then maps the work to the user's own
 Jobs, Business Processes, and the four Value Pillars.
 
+> **v18 (Cowork-app allow-list harvest; Scout excluded).** The harvest now reads **all three**
+> `Documents/Cowork/` layouts — `Tasks/<goal>-<date>/`, root `<goal>-<date>/`, and legacy
+> `sessions/<uuid>/` — and counts **only items created by the Cowork app**
+> (`createdBy.application.id = 6ab48b67-…`). It **never enumerates `Documents/Apps/…`**, so the M365
+> Copilot app running **Scout** (heartbeats, monitors, executive briefings) is excluded for every user
+> with no per-instance name list. Persistent `Tasks/` folders leave `exec_min` null (the file-timestamp
+> span is days, not run time) so the modeled assisted clock applies; supporting files fold into the
+> primary deliverable. Methodology, classifier, compute, and renderer are **unchanged**. See
+> [`CHANGELOG-v18.md`](CHANGELOG-v18.md).
+>
 > **v17 (two-lens work-by-process + professional roles).** The **Work by business process** section
-> is now one row per **project Cowork delivered** (task-category column dropped) with a toggle between
+> is one row per **project Cowork delivered** (task-category column dropped) with a toggle between
 > two lenses — **By Job-to-be-Done** (indented Job ▸ Business Process ▸ JTBD ▸ Project) and **By
 > Business Value Pillar** (Pillar · Project · Assistance). A **Roles Cowork assembled for me** section
 > (v16) lists the *exact professional roles a billing firm would charge* (LLM-tagged per session,
@@ -14,7 +24,7 @@ Jobs, Business Processes, and the four Value Pillars.
 > of the cited per-task bands** with the **speed multiplier as a secondary, directional stat** (v15).
 > One self-contained skill; `map-my-work` is **folded in as bundled references** (`references/`) and
 > runs **inline** to derive each user's own Jobs ▸ Business Processes ▸ Value Pillars ▸ JTBD. See
-> [`CHANGELOG-v17.md`](CHANGELOG-v17.md) (and v16 / v15 / v14 / v13 / v11 / v6 / v5) for the history.
+> [`CHANGELOG-v18.md`](CHANGELOG-v18.md) (and v17 / v16 / v15 / v14 / v13 / v11 / v6 / v5) for history.
 
 ---
 
@@ -24,7 +34,8 @@ Jobs, Business Processes, and the four Value Pillars.
 cowork-roi-report/
 ├── SKILL.md                     # skill definition + workflow (loaded by Cowork)
 ├── README.md                    # this file
-├── CHANGELOG-v17.md             # latest — two-lens (JTBD / Value Pillar) work-by-process
+├── CHANGELOG-v18.md             # latest — Cowork-app allow-list harvest (all 3 layouts), Scout excluded
+├── CHANGELOG-v17.md             # two-lens (JTBD / Value Pillar) work-by-process
 ├── CHANGELOG-v16.md             # professional roles a billing firm would charge; process redesign
 ├── CHANGELOG-v15.md             # purely research-anchored Time Saved; multiplier demoted
 ├── CHANGELOG-v14.md             # single self-contained skill, four value pillars
@@ -49,7 +60,7 @@ cowork-roi-report/
 
 ## Install
 
-1. **Download** `cowork-roi-report-skill-v17.zip` from the latest release. *(No need to unzip — attach it as-is.)*
+1. **Download** `cowork-roi-report-skill-v18.zip` from the latest release. *(No need to unzip — attach it as-is.)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session.
 3. **Click the ➕ (plus) symbol** to attach the zip, then send: **"Add this skill."**
 4. Once it's added, ask: **"Generate my impact summary report."** It'll ask one quick question — which period to measure (**7, 15, or 30 days**) — then build your report.
@@ -67,8 +78,10 @@ No third-party dependencies — standard-library Python 3 only.
 
 ## Input schema (`cowork_sessions.json`)
 
-The skill harvests Cowork session workspaces from OneDrive
-(`Documents/Cowork/sessions/<uuid>/input` and `/output`) and writes this:
+The skill harvests Cowork session workspaces from OneDrive under `Documents/Cowork/` across **all
+three** layouts — `Tasks/<goal>-<date>/`, root `<goal>-<date>/`, and legacy `sessions/<uuid>/` (each
+with `input/` + `output/`) — counting **only** artifacts whose `createdBy.application.id` is the Cowork
+app (`6ab48b67-…`), and **never** enumerating `Documents/Apps/…` (Scout). It writes this:
 
 ```jsonc
 {
