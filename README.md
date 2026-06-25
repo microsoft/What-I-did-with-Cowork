@@ -1,6 +1,6 @@
 # What Cowork Did for Me
 
-> A personal impact report skill for **Microsoft Copilot Cowork** — quantifies your leverage as research-anchored **time saved** and its **professional-services-equivalent value**.
+> A personal impact report skill for **Microsoft Copilot Cowork** — quantifies your leverage as research-anchored **time saved**, its **professional-services-equivalent value**, and the **real Copilot-credit cost** (so you get an actual ROI).
 
 ![What Cowork Did for Me — sample report](images/cowork-roi-report-sample.gif)
 
@@ -8,7 +8,7 @@
 
 ## Get Started in 4 Steps
 
-1. **Download** [`cowork-roi-report-skill-v18.zip`](../../releases/latest) from the latest release. *(No need to unzip — attach it as-is.)*
+1. **Download** [`cowork-roi-report-skill-v20.zip`](../../releases/latest) from the latest release. *(No need to unzip — attach it as-is.)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session.
 3. **Click the ➕ (plus) symbol** to attach the zip file, then send this prompt:
 
@@ -28,11 +28,12 @@ That's it. 🎉
 
 **With Cowork, you operate like a multidisciplinary team.** You steer; Cowork brings in best-in-class experts from across fields, produces quality output, and does it at a pace far beyond what humans alone could match. This skill makes that leverage visible and defensible across three dimensions:
 
-- **⚡ Speed** — the **time saved**, anchored entirely in published research: the sum of per-task expert bands for everything Cowork ran for you (conservative / typical / optimistic). A **speed multiplier** rides alongside as a secondary, directional read on how much faster you moved.
+- **⚡ Speed** — the **time saved**, anchored entirely in published research: for each task category, the per-run expert band × the number of runs Cowork executed (conservative / typical / optimistic). A **speed multiplier** rides alongside as a secondary, directional read on how much faster you moved.
 - **🎯 Quality** — the kind of **expert-grade outputs** Cowork helped you ship: analyst-style research syntheses, executive decks and documents, interactive dashboards and apps, scripts, and polished communications — each traced to a real artifact you produced.
 - **🧠 Expert assistance** — the professional **skills Cowork put to work for you** — Presentation Design, Technical Writing, Data Analysis, Financial Modelling, Frontend Development, and more — rolled up into a **professional-services-equivalent dollar value** at your hourly rate.
+- **💳 Real cost & ROI** — your **actual Copilot-credit cost** read live from Cowork's `/cost` (credits × 1¢ GA list), shown per session and rolled into an **ROI banner**: research-anchored value ÷ real cost, with the return multiple and net %.
 
-Every figure traces back to your own session artifacts in OneDrive — nothing is invented, and categories with no work in the window report zero. The result is a credible, shareable answer to *"What has Cowork actually done for me?"*
+Every figure traces back to your own session artifacts in OneDrive — nothing is invented, the cost is read live (never estimated), and categories with no work in the window report zero. The result is a credible, shareable answer to *"What has Cowork actually done for me?"*
 
 ---
 
@@ -43,7 +44,8 @@ Every figure traces back to your own session artifacts in OneDrive — nothing i
 The skill:
 - Harvests your Cowork session artifacts (inputs analyzed & outputs produced) from OneDrive — across **all three** `Documents/Cowork/` folder layouts, counting **only items created by the Cowork app** so unrelated activity (e.g. M365 Copilot/Scout) is excluded (see [Harvest scope](#harvest-scope--what-counts-as-cowork-activity))
 - Classifies work into 8 research-anchored task categories
-- Sums the **cited per-task bands** into research-anchored **time saved**, then values it at your hourly rate
+- Computes research-anchored **time saved** as **Σ runs × per-run band**, then values it at your hourly rate
+- Reads your **real Copilot-credit cost** live from `/cost` and reports an actual **ROI** (value ÷ cost)
 - Renders a self-contained, interactive HTML report you can share or print to PDF
 
 Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-Did-Copilot), adapted for Copilot Cowork.
@@ -64,8 +66,8 @@ Why allow-list, not deny-list: a "find Scout and remove it" rule keys on instanc
 
 ## Report Highlights
 
-### Time Saved & Value
-The report leads with research-anchored **Time Saved** — the sum of the cited per-task bands for everything Cowork ran (conservative / typical / optimistic) — and its **professional-services-equivalent Value** at your hourly rate. A **speed multiplier** appears as a clearly-labelled *secondary, directional* stat (its hands-on denominator is modeled, not a stopwatch). A live hourly-rate control recalculates every dollar figure, and a **Download PDF** button exports the whole thing.
+### Time Saved, Value & ROI
+The report leads with research-anchored **Time Saved** — for each task category, the per-run expert band × the number of runs Cowork executed (conservative / typical / optimistic) — and its **professional-services-equivalent Value** at your hourly rate. A **ROI banner** sets that value against your **real Copilot-credit cost** (read live from `/cost`), showing the return multiple (value ÷ cost) and net %. A **speed multiplier** appears as a clearly-labelled *secondary, directional* stat (its hands-on denominator is modeled, not a stopwatch). A live hourly-rate control recalculates every dollar figure, and a **Download PDF** button exports the whole thing.
 
 ![KPIs and Speed Multiplier](images/report-kpis.png)
 
@@ -75,10 +77,10 @@ A business-value table maps your impact to the **four value pillars** — **Reve
 ### Work by Business Process — two lenses
 This section presents one row per **project Cowork delivered** (not task categories), and you **toggle between two lenses**:
 
-- **By Job-to-be-Done** — an indented **Job ▸ Business Process ▸ JTBD ▸ Project** hierarchy (each level chip-labelled), with every project's assistance inline: expert-equivalent hours saved · value · speed.
-- **By Business Value Pillar** — a clean three-column table: **Business value pillar · Project · Assistance offered**.
+- **By Job-to-be-Done** — an indented **Job ▸ Business Process ▸ JTBD ▸ Project** hierarchy (each level chip-labelled), with every project's assistance inline: expert-equivalent hours saved · value · **real credits · $cost** · speed.
+- **By Business Value Pillar** — a clean table: **Business value pillar · Project · Assistance offered** (with the same credits·cost detail).
 
-The process/job/JTBD taxonomy is **derived live for whoever runs the report** (from their own Microsoft 365 footprint via the bundled map-my-work playbook) — nothing is hard-coded to any individual; if the playbook isn't run, it falls back to the generic APQC business-process framework. A **session-cost column** shows actual Cowork spend where captured, and **auto-hides** when no cost data is available. **Chat-only sessions** (no saved file) are counted too, via telemetry.
+The process/job/JTBD taxonomy is **derived live for whoever runs the report** (from their own Microsoft 365 footprint via the bundled map-my-work playbook) — nothing is hard-coded to any individual; if the playbook isn't run, it falls back to the generic APQC business-process framework. A **Credits · cost column** shows the **real Copilot-credit spend** per session — read live from `/cost` (credits × 1¢ GA list) and never estimated. **Chat-only sessions** (no saved file) are counted too, via telemetry.
 
 ![Work Process](images/WorkProcess.png)
 
@@ -124,7 +126,7 @@ The skill will:
 1. **Ask** which period to measure (7, 15, or 30 days) and whether to automate
 2. **Harvest** your Cowork session files from OneDrive
 3. **Classify** each session using the deterministic extension-based classifier
-4. **Compute** research-anchored Time Saved (Σ cited bands) and Value, plus a secondary speed multiplier
+4. **Compute** research-anchored Time Saved (Σ runs × band) and Value, attach the real `/cost` credits, and derive ROI + a secondary speed multiplier
 5. **Render** a beautiful HTML report
 6. **Optionally automate** on a recurring schedule with email digest
 
@@ -132,13 +134,17 @@ The skill will:
 
 ## Methodology
 
-**Time Saved is purely research-anchored.** What a professional would take with no AI is simply the **sum of the cited band for each task** in a session — nothing else. There are no read-time or authoring assumptions, so every minute traces to a published study.
+**Time Saved = Σ runs × band** *(anchored to the Cowork Time-Savings methodology deck)*. For each session, every task category contributes its research-anchored per-run band **× the number of runs** Cowork executed in that category. Each band already bakes in the activity-instance chain inside one run (e.g. `code 56` = write + test + debug; `document 24` = draft → rewrite → format → polish), so the model counts runs and multiplies — it does **not** value code per line or add a separate authoring step (both would double-count the chain).
 
 ```
-time_saved_min = Σ CATS[task].typical        # e.g. Analysis (67) + Document (24) = 91 min
+time_saved_min   = Σ_categories  runs[cat] × CATS[cat].typical
 Time Saved (hrs) = Σ time_saved_min / 60      # Conservative / Optimistic re-sum the low / high bands
 Value            = Time Saved hrs × hourly_rate
 ```
+
+**Run counts are telemetry-grounded** from the agentic tool-chains: a **code run ≈ 6 code-edit actions**, an **analysis run ≈ 5 research-tool calls**. `mine_session.py` emits a `runs:{category:count}` field; sessions without telemetry use conservative estimates, labeled as such. The run count is the single transparent, auditable lever.
+
+**Real cost & ROI.** Each session's true cost is read live from Cowork's `/cost` (Copilot Credits), priced at **1¢/credit** (GA pay-as-you-go list) — never estimated. The **ROI banner** = research-anchored Value ÷ real cost.
 
 **Speed multiplier (secondary, directional).** Dividing Time Saved by a *modeled* hands-on clock gives a speed multiplier. That assisted clock — `8 min + 2 min × (inputs + outputs)`, floor 4 — is the one non-research input (OneDrive can't measure keystroke time), so the multiplier is directional, not a stopwatch (it's *measured* for sessions where the telemetry hook is on):
 
@@ -146,7 +152,7 @@ Value            = Time Saved hrs × hourly_rate
 speed_multiplier = Σ time_saved_min / Σ assisted_min        (rate-independent · secondary)
 ```
 
-### Research-anchored category bands (min saved / task)
+### Research-anchored category bands (min saved / run)
 
 | Category | Low | Typical | High |
 |---|---:|---:|---:|
@@ -169,16 +175,16 @@ Sources: Stanford-WB, Microsoft Research, NBER, Forrester — all clickable in t
 cowork-roi-report-skill/
 ├── SKILL.md                    # Skill definition + workflow (loaded by Cowork)
 ├── README.md                   # Technical documentation
-├── CHANGELOG-v18.md            # Latest — plus v5 / v6 / v11 / v13 / v14 / v15 / v16 changelogs
+├── CHANGELOG-v20.md            # Latest — plus v5 / v6 / v11 / v13 / v14 / v15 / v16 / v18 / v19 changelogs
 ├── references/
 │   ├── map-my-work-playbook.md # Derives each user's Jobs ▸ Processes ▸ Pillars ▸ JTBD (runs inline)
-│   └── value-pillars.md        # Four-pillar crosswalk (single source of truth)
+│   └── value-pillars.md        # Four-pillar (OneBVM) crosswalk (single source of truth)
 ├── scripts/
-│   ├── mine_session.py         # Live-session telemetry (Stop hook)
+│   ├── mine_session.py         # Live-session telemetry (Stop hook); emits runs:{category:count}
 │   ├── statusline_cost.py      # Per-session cost capture (statusLine hook)
 │   ├── classify.py             # Category + business-process classifier
-│   ├── compute.py              # Applies the methodology → payload JSON
-│   ├── build_report.py         # Renders the self-contained HTML report
+│   ├── compute.py              # Applies the methodology (Σ runs × band) + real /cost credits → payload JSON
+│   ├── build_report.py         # Renders the self-contained HTML report (Credits·cost column, ROI banner)
 │   ├── apqc_taxonomy.json      # Generic APQC business-process fallback
 │   ├── roles_taxonomy.json     # 16-role keyword fallback for "roles assembled"
 │   └── skills_vocabulary.json  # Controlled DOMAIN + TECH skills vocabulary
@@ -192,9 +198,10 @@ No third-party dependencies — **standard-library Python 3 only**.
 
 ## Caveats
 
-- **Time Saved & Value are research-anchored** (cited per-task bands). The **speed multiplier's** assisted clock is **modeled**, not measured — OneDrive records artifacts, not keystroke time — so treat the multiplier as **directional**, not a stopwatch.
-- Categories with **no tasks** in the window report **zero** — keeping totals a conservative floor.
-- Counting stays conservative: ~2 run tasks per session; supporting files folded into the primary task.
+- **Time Saved & Value are research-anchored** (per-run bands × telemetry-grounded run counts). The **speed multiplier's** assisted clock is **modeled**, not measured — OneDrive records artifacts, not keystroke time — so treat the multiplier as **directional**, not a stopwatch.
+- **Cost is real, not estimated** — Copilot credits are read live from `/cost` and priced at 1¢ each (GA list). If the browser isn't available (e.g. a headless scheduled run), the last ledgered values are reused or you're asked to paste `/cost`.
+- Categories with **no runs** in the window report **zero** — keeping totals a conservative floor.
+- Counting stays conservative: supporting files folded into the primary task; iterative versions of an artifact collapse to one deliverable.
 
 ---
 
