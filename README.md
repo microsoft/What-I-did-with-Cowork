@@ -31,7 +31,7 @@ That's it. 🎉
 - **⚡ Speed** — the **time saved**, anchored entirely in published research: for each task category, the per-run expert band × the number of runs Cowork executed (conservative / typical / optimistic). A **speed multiplier** rides alongside as a secondary, directional read on how much faster you moved.
 - **🎯 Quality** — the kind of **expert-grade outputs** Cowork helped you ship: analyst-style research syntheses, executive decks and documents, interactive dashboards and apps, scripts, and polished communications — each traced to a real artifact you produced.
 - **🧠 Expert assistance** — the professional **skills Cowork put to work for you** — Presentation Design, Technical Writing, Data Analysis, Financial Modelling, Frontend Development, and more — rolled up into a **professional-services-equivalent dollar value** at your hourly rate.
-- **💳 Real cost & ROI** — your **actual Copilot-credit cost** read live from Cowork's `/cost` (credits × 1¢ GA list), shown per session and rolled into an **ROI banner**: research-anchored value ÷ real cost, with the return multiple and net %.
+- **💳 Real cost & ROI** — your **actual Copilot-credit cost** read live from Cowork's `/cost` (credits × 1¢ GA list), shown per session and rolled into an **ROI banner**: research-anchored value ÷ real cost, with the return multiple and net %. **Cost data requires running in the web app** ([m365.cloud.microsoft/agents/cowork](https://m365.cloud.microsoft/agents/cowork)) — if you run the skill in the **desktop app, cost data is not available** (the report still renders everything else).
 
 Every figure traces back to your own session artifacts in OneDrive — nothing is invented, the cost is read live (never estimated), and categories with no work in the window report zero. The result is a credible, shareable answer to *"What has Cowork actually done for me?"*
 
@@ -144,7 +144,7 @@ Value            = Time Saved hrs × hourly_rate
 
 **Run counts are telemetry-grounded** from the agentic tool-chains: a **code run ≈ 6 code-edit actions**, an **analysis run ≈ 5 research-tool calls**. `mine_session.py` emits a `runs:{category:count}` field; sessions without telemetry use conservative estimates, labeled as such. The run count is the single transparent, auditable lever.
 
-**Real cost & ROI.** Each session's true cost is read live from Cowork's `/cost` (Copilot Credits), priced at **1¢/credit** (GA pay-as-you-go list) — never estimated. The **ROI banner** = research-anchored Value ÷ real cost.
+**Real cost & ROI.** Each session's true cost is read live from Cowork's `/cost` (Copilot Credits), priced at **1¢/credit** (GA pay-as-you-go list) — never estimated. The **ROI banner** = research-anchored Value ÷ real cost. **This requires running in the web app — [m365.cloud.microsoft/agents/cowork](https://m365.cloud.microsoft/agents/cowork) — since `/cost` is only readable there; running in the desktop app yields no cost data** (everything else still renders).
 
 **Speed multiplier (secondary, directional).** Dividing Time Saved by a *modeled* hands-on clock gives a speed multiplier. That assisted clock — `8 min + 2 min × (inputs + outputs)`, floor 4 — is the one non-research input (OneDrive can't measure keystroke time), so the multiplier is directional, not a stopwatch (it's *measured* for sessions where the telemetry hook is on):
 
@@ -199,7 +199,7 @@ No third-party dependencies — **standard-library Python 3 only**.
 ## Caveats
 
 - **Time Saved & Value are research-anchored** (per-run bands × telemetry-grounded run counts). The **speed multiplier's** assisted clock is **modeled**, not measured — OneDrive records artifacts, not keystroke time — so treat the multiplier as **directional**, not a stopwatch.
-- **Cost is real, not estimated** — Copilot credits are read live from `/cost` and priced at 1¢ each (GA list). If the browser isn't available (e.g. a headless scheduled run), the last ledgered values are reused or you're asked to paste `/cost`.
+- **Cost is real, not estimated** — Copilot credits are read live from `/cost` and priced at 1¢ each (GA list). **Cost data is only available when you run the skill in the web app ([m365.cloud.microsoft/agents/cowork](https://m365.cloud.microsoft/agents/cowork)); the desktop app does not expose `/cost`, so cost/ROI is omitted there.** If the browser isn't available (e.g. a headless scheduled run), the last ledgered values are reused or you're asked to paste `/cost`.
 - Categories with **no runs** in the window report **zero** — keeping totals a conservative floor.
 - Counting stays conservative: supporting files folded into the primary task; iterative versions of an artifact collapse to one deliverable.
 

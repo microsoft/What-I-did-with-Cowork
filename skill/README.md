@@ -289,9 +289,12 @@ values land in a durable ledger (`cowork-session-credits.json`); `compute.py` at
 `cost_usd` (= credits × $0.01) per session and the renderer shows the **Credits · cost** column + **ROI
 banner**. Reopening a prior session shows its real running total, so past sessions are capturable.
 
-**Requirements & guardrails.** Browser automation available + a local browser signed into M365 Copilot.
-Never estimate or fabricate a credit number — if the browser isn't available (e.g. a headless scheduled
-run), reuse the ledger's last values or ask the user to paste/screenshot `/cost`.
+**Requirements & guardrails.** Cost data is only available when the skill runs against the **web app**
+([m365.cloud.microsoft/agents/cowork](https://m365.cloud.microsoft/agents/cowork)) with browser
+automation available and a local browser signed into M365 Copilot. **Running in the desktop app does
+not expose `/cost`, so cost and ROI are omitted there** (the rest of the report still renders). Never
+estimate or fabricate a credit number — if the browser isn't available (e.g. a headless scheduled run),
+reuse the ledger's last values or ask the user to paste/screenshot `/cost`.
 
 ## Optional hooks — telemetry & cost (additive)
 
@@ -315,8 +318,9 @@ session) so the harness picks them up.
 - **Time Saved & Value are research-anchored** (per-run bands × telemetry-grounded run counts; `Σ runs
   × band`). The **speed multiplier's** assisted clock is **modeled**, not measured — OneDrive records
   artifacts, not keystroke time — so treat the multiplier as **directional**, not a stopwatch.
-- **Cost is real, not estimated** — credits are read live from `/cost` and priced at 1¢ each (GA list);
-  with no browser, the last ledgered values are reused or the user is asked to paste `/cost`.
+- **Cost is real, not estimated** — credits are read live from `/cost` and priced at 1¢ each (GA list).
+  **Cost/ROI requires the web app ([m365.cloud.microsoft/agents/cowork](https://m365.cloud.microsoft/agents/cowork)); the desktop app doesn't expose `/cost`, so cost is omitted there.** With no browser,
+  the last ledgered values are reused or the user is asked to paste `/cost`.
 - Categories with **no runs** in the window are reported as **zero**, keeping totals a
   conservative floor.
 - Counting stays conservative: supporting files folded into the primary task; iterative versions of an
