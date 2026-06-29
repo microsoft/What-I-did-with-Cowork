@@ -25,18 +25,18 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 
 | Version | File | Status |
 |---|---|---|
-| **v22** | [`cowork-roi-report-skill-v22.zip`](cowork-roi-report-skill-v22.zip) | ✅ **Latest version** — recommended |
+| **v23** | [`cowork-roi-report-skill-v23.zip`](cowork-roi-report-skill-v23.zip) | ✅ **Latest version** — recommended |
 | older | [`archive/`](archive) | Previous versions (kept for reference) |
 
-### What's new in v22
+### What's new in v23
 
-v22 keeps the **full, detailed personal impact report** and removes the Copilot-credits feature that the short-lived v21 added:
+v23 makes **Business Process the aggregation anchor** and adds a **durable taxonomy memory** so process and project names stay stable across runs instead of being re-invented each time:
 
-- **No credits question.** The opening prompt is back to **two** questions — **Period** (7 / 15 / 30 days) and **Delivery** (run once, or run + automate + email digest).
-- **No `/cost` browser sweep.** The skill no longer drives the browser to read "N credits used for this task so far" and never writes a credits ledger.
-- **No credits / cost line in the report.** The cost column and Copilot-Credits ROI banner have been **removed entirely** from the renderer — nothing is fabricated.
+- **Process-anchored taxonomy.** The **Work by business process** section now rolls up as **Business Process ▸ JTBD ▸ Project** — the standalone **Job** layer is gone. Each process shows a subtotal (sessions · hours · value · % of time), with projects nested under their JTBD. **By process** is the default view; **By pillar** remains as a toggle.
+- **Durable taxonomy memory (align-first, create-if-novel).** A new `scripts/reconcile_taxonomy.py` runs before `classify.py`: it reuses a known Project, else aligns to an existing Process by keyword similarity, else mints a new one. A canonical registry (`~/.claude/cowork-process-registry.json`) is read first, aligned to, and persisted every run — so a run a week later locates the registry and aligns to it instead of inventing new names.
+- **`pct_time` rollup.** `compute.py` now carries a `pct_time` field per process; numbers still come only from `compute.py` (no hand math).
 
-Everything else is unchanged: speed multiplier + professional-services value, KPIs, the four-pillar **Value at a glance** table, **Where the time went** by task category, **Roles Cowork assembled**, **Work by business process** (Job ▸ Process ▸ JTBD), **Deliverables & the skills behind them**, the activity heatmap, and the methodology glossary with clickable sources. See [`skill/CHANGELOG-v22.md`](skill/CHANGELOG-v22.md) for full details.
+Everything else is unchanged: the artifact-scaled two-clock methodology, the Cowork-app allow-list harvest across all three OneDrive layouts, KPIs, the four-pillar **Value at a glance** table, **Where the time went** by task category, **Roles Cowork assembled**, **Deliverables & the skills behind them**, the activity heatmap, and the methodology glossary with clickable sources. See [`skill/CHANGELOG-v23.md`](skill/CHANGELOG-v23.md) for full details.
 
 ---
 
@@ -58,7 +58,7 @@ See where your time went across the research-anchored task categories, each valu
 ![Categories breakdown](images/report-categories.png)
 
 ### Work by business process
-Your projects, seen two ways — by the **Job-to-be-Done** they served, or by the **Business Value Pillar** they create value in. Same projects, two lenses, all derived from your own footprint at run time.
+Your projects, seen two ways — by the **JTBD** they served within their **Business Process**, or by the **Business Value Pillar** they create value in. Same projects, two lenses, all derived from your own footprint at run time.
 
 ![Work by business process](images/report-process.png)
 
@@ -68,7 +68,7 @@ Your projects, seen two ways — by the **Job-to-be-Done** they served, or by th
 - **Value at a glance** — the four Value Pillars with example KPIs
 - **Where the time went** — research-anchored time-savings bars by task category
 - **Roles Cowork assembled** — the professional roles a billing firm would charge for your work, each linked to a job search
-- **Work by business process** — Job ▸ Process ▸ JTBD, toggleable between Job-to-be-Done and Business Value Pillar views
+- **Work by business process** — Process ▸ JTBD ▸ Project, toggleable between By-process and Business-Value-Pillar views
 - **Deliverables & the skills behind them**
 - **Methodology & glossary** — every band traceable, with clickable research sources
 - **Live hourly-rate control** — recalculates all dollar figures; the speed multiplier is rate-independent
@@ -80,7 +80,7 @@ Your projects, seen two ways — by the **Job-to-be-Done** they served, or by th
 
 ### Option 1 — Let Cowork install it for you (easiest)
 
-1. **Download** the latest version: [`cowork-roi-report-skill-v22.zip`](cowork-roi-report-skill-v22.zip) *(no need to unzip — attach it as-is)*
+1. **Download** the latest version: [`cowork-roi-report-skill-v23.zip`](cowork-roi-report-skill-v23.zip) *(no need to unzip — attach it as-is)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session
 3. **Click the ➕ (plus) symbol** to attach the zip file, then send:
 
@@ -91,7 +91,7 @@ Your projects, seen two ways — by the **Job-to-be-Done** they served, or by th
 
 ### Option 2 — Manual install
 
-1. **Download** the latest version: [`cowork-roi-report-skill-v22.zip`](cowork-roi-report-skill-v22.zip)
+1. **Download** the latest version: [`cowork-roi-report-skill-v23.zip`](cowork-roi-report-skill-v23.zip)
 2. **Extract** the zip
 3. **Copy** the `cowork-roi-report/` folder to your Cowork skills directory:
    ```
@@ -117,7 +117,7 @@ The skill will:
 1. **Ask** two questions — which period to measure (7, 15, or 30 days) and whether to run once or automate + email a recurring digest
 2. **Harvest** your Cowork session files from OneDrive
 3. **Classify** each session with the deterministic extension-based classifier
-4. **Map** your work to Jobs ▸ Processes ▸ JTBDs and the four Value Pillars (run inline from the map-my-work playbook)
+4. **Map** your work to Processes ▸ JTBDs ▸ Projects and the four Value Pillars, aligning to your durable taxonomy registry (align-first, create-if-novel)
 5. **Compute** research-anchored Time Saved and value
 6. **Render** a beautiful, self-contained HTML report
 
@@ -158,24 +158,28 @@ Sources: Stanford-WB, Microsoft Research, NBER, Forrester — all clickable in t
 cowork-roi-report/
 ├── SKILL.md                     # skill definition + workflow (loaded by Cowork)
 ├── README.md                    # technical documentation
-├── CHANGELOG-v22.md             # latest — Copilot-credits feature removed
-├── CHANGELOG-v5…v21.md          # full version history
+├── CHANGELOG-v23.md             # latest — Process-anchored taxonomy + durable taxonomy memory
+├── CHANGELOG-v5…v22.md          # full version history
 ├── scripts/
+│   ├── reconcile_taxonomy.py    # NEW — align-first/create-if-novel; runs before classify.py
 │   ├── classify.py              # deterministic ext→category classifier
-│   ├── compute.py               # applies the methodology → payload JSON
+│   ├── compute.py               # applies the methodology → payload JSON (now with pct_time)
 │   ├── build_report.py          # renders the self-contained HTML report
 │   ├── mine_session.py          # mines the live session transcript (telemetry hook)
+│   ├── statusline_cost.py       # optional status-line cost helper
 │   ├── apqc_taxonomy.json       # generic APQC fallback business-process taxonomy
 │   ├── roles_taxonomy.json      # role keyword fallback for "roles assembled"
 │   ├── skills_vocabulary.json   # controlled vocabulary for "skills augmented"
-│   └── process_overrides.json   # per-user session→process map (regenerated at run time)
+│   ├── process_overrides.json   # per-user session→process map (regenerated at run time)
+│   └── process_overrides.example.json  # example override map
 ├── references/
-│   ├── map-my-work-playbook.md  # derives your own Jobs ▸ Processes ▸ Workflows (run inline)
+│   ├── map-my-work-playbook.md  # derives your own Processes ▸ JTBDs ▸ Projects (run inline)
 │   └── value-pillars.md         # the four-pillar crosswalk
 └── examples/
-    ├── sample_sessions.json     # synthetic input (safe to share)
-    └── cowork-roi-report-example.html  # sample report rendered from fictional data
+    └── sample_sessions.json     # synthetic input (safe to share)
 ```
+
+The bundle also ships a `cowork-process-registry.seed.json` seed for the **durable taxonomy memory** — the canonical `~/.claude/cowork-process-registry.json` (Processes + known Projects) that is read first, aligned to, and persisted every run.
 
 `map-my-work` is **folded in** as a reference playbook — there is no second skill to install, and it runs automatically when the report is generated. No third-party dependencies — **standard-library Python 3 only**.
 
