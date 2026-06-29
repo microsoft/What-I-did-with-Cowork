@@ -1,0 +1,22 @@
+{
+  "_note": "Professional-role taxonomy ported from microsoft/What-I-Did-Copilot (prompts/role_classification.txt). PRIMARY path: the harvest LLM names the 1-2 roles a billing firm would charge for each session (free to use exact roles beyond this list). FALLBACK: keyword match below when a session has no professional_roles.",
+  "roles": [
+    {"role": "QA Engineer", "keywords": ["debug","fix","error","bug","crash","broken","test","qa"]},
+    {"role": "UX Designer", "keywords": ["ux","wireframe","flow","prototype","mockup"]},
+    {"role": "Frontend Developer", "keywords": [".html",".css","visual","layout","style","component","frontend"]},
+    {"role": "Software Engineer", "keywords": [".py","python","code","implement","build","function","module","script"]},
+    {"role": "Data Analyst", "keywords": ["sql","query","dashboard","kpi","dataset","dataframe","pivot","bi report","power bi","analytics","analysis"]},
+    {"role": "Data Engineer", "keywords": ["pipeline","etl","schema","warehouse","dbt"]},
+    {"role": "Technical Writer", "keywords": ["document","readme","how-to","guide","explainer","documentation"]},
+    {"role": "DevOps Engineer", "keywords": ["deploy","dockerfile","kubernetes","terraform","ci/cd","github action"]},
+    {"role": "Solutions Architect", "keywords": ["architect","api design","integration design","architecture"]},
+    {"role": "Product Manager", "keywords": ["roadmap","user story","prioritize","backlog","product requirement"]},
+    {"role": "Program Manager", "keywords": ["project plan","milestone","delivery","dependency","status report","program"]},
+    {"role": "Business Analyst", "keywords": ["process map","gap analysis","workflow","business requirement","stakeholder interview"]},
+    {"role": "Management Consultant", "keywords": ["strategy","recommendation","framework","benchmark","executive","consulting","value story","narrative"]},
+    {"role": "Financial Analyst", "keywords": ["financial model","valuation","forecast","portfolio","backtest","alpha","pnl","quant","chargeback","cost"]},
+    {"role": "Risk & Compliance Analyst", "keywords": ["compliance","regulation","audit","risk assessment","kyc","aml","regulatory"]},
+    {"role": "Research Scientist", "keywords": ["experiment","hypothesis","literature","simulation","scientific","research paper"]}
+  ],
+  "default": "Knowledge Worker"
+}

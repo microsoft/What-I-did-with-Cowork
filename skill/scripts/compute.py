@@ -35,12 +35,16 @@ Usage: python compute.py --in working/cowork_sessions.json --out working/cowork_
 import json, argparse, collections
 
 # v4 research-anchored bands (min saved per run task): (low, typical, high, label)
+# Updated 2026-06-19 from Cowork_Methodology_Walkthrough 0605.pptx (slide 3 / slide 12):
+#   Analysis & Research typical: 71 → 67  (Stanford-WB basket mean 335÷5=67)
+#   Meeting workflows high:      45 → 43  (slide 7)
+#   Communication workflows high: 6 → 11  (slide 8)
 CATS = {
- "analysis":(30,71,92,"Analysis & Research"),
+ "analysis":(30,67,92,"Analysis & Research"),
  "document":(12,24,42,"Document & content creation"),
  "email":(3,7,12,"Email workflows"),
- "meeting":(12,31,45,"Meeting workflows"),
- "comms":(2,4,6,"Communication workflows"),
+ "meeting":(12,31,43,"Meeting workflows"),
+ "comms":(2,4,11,"Communication workflows"),
  "special":(10,25,40,"Specialized workflows"),
  "code":(30,56,96,"Write or debug code"),
  "general":(2,5,8,"General assistance / Other"),
@@ -48,19 +52,14 @@ CATS = {
 INTENT={"analysis":"Researching","document":"Building","email":"Communicating",
         "meeting":"Coordinating","comms":"Communicating","special":"Building",
         "code":"Building","general":"Researching"}
-ROLE={"analysis":"Data Analyst / Researcher","document":"Content Writer / Communicator",
-      "email":"Communicator","meeting":"Meeting Facilitator","comms":"Communicator",
-      "special":"Solutions Specialist","code":"Software Engineer","general":"Generalist"}
+# Roles are no longer a fixed category map — they come from each session's professional_roles
+# (LLM-tagged "roles a billing firm would charge"; keyword fallback in classify.py).
 
-# ---- two-clock model constants (documented in the report glossary) ----
-READ_DOC   = 12   # min to read/triage one document-like source (pdf, doc, deck, sheet, page)
-READ_IMG   = 5    # min for one image/screenshot
-AUTHOR = {"pptx":45,"ppt":45,"docx":40,"doc":40,"pdf":40,
-          "xlsx":35,"xls":35,"csv":30,"html":35,"htm":35,
-          "md":20,"txt":18,"py":35,"js":35,"ps1":30,"ipynb":35,"sh":25}
-AUTHOR_DEFAULT = 30
-ASSIST_FIXED   = 8    # min fixed prompt/setup per session
-ASSIST_PER_ART = 2    # min hands-on handling per artifact (in or out)
+# ---- model constants ----
+# Expert clock = sum of research-anchored CATS bands per task (no read/author heuristics).
+# Assisted clock is a small MODELED hands-on estimate (OneDrive can't measure keystroke time).
+ASSIST_FIXED   = 8    # min fixed prompt/setup per session (modeled)
+ASSIST_PER_ART = 2    # min hands-on handling per artifact (in or out) — modeled
 IMG_EXT = {"png","jpg","jpeg","gif","bmp","webp","heic"}
 DATA_CAT_EXT = {"xlsx","xls","csv"}                                  # -> Analysis & Research
 CODE_CAT_EXT = {"py","js","ps1","ipynb","sh","ts","go","sql"}        # -> Write or debug code
@@ -77,6 +76,41 @@ TYPE_LABEL = {
 }
 def type_label(ext): return TYPE_LABEL.get(ext.lower(),"File")
 
+# Per-artifact AUTHORING anchor (min a professional would spend producing ONE deliverable),
+# by friendly type — (low, typical, high). Scales the expert clock with the NUMBER of artifacts.
+# Images use a deliberately small anchor so auto-generated QA screenshots/variants don't inflate.
+AUTHOR_BAND = {
+ "Deck":(30,45,60),"Document":(25,40,55),"Spreadsheet":(25,35,50),
+ "Web page":(25,35,50),"Script":(25,35,50),"Notebook":(25,35,50),
+ "Query":(15,25,35),"Image":(2,5,10),"Text":(10,20,30),"File":(15,30,45),
+}
+# Per-input READ/triage anchor (min to analyze ONE source) — scales with analyses performed.
+READ_DOC=(8,12,18); READ_IMG=(2,5,8)
+# Per LOGIC-LINE-OF-CODE anchor (min an unassisted professional spends per finished, reviewed SLOC).
+# (low, typical, high) = 40 / 30 / 20 LOC per hour — industry range for production-quality code.
+LOC_MIN=(1.5,2.0,3.0)
+# Only SUBSTANTIVE produced artifacts earn an authoring anchor — Word docs, decks, spreadsheets, written
+# specs. Code is valued separately by its logic LOC; generated web/HTML output, images, and QA/variant
+# files are TRIVIAL and earn nothing (per user direction: ignore trivial artifacts).
+SUBSTANTIVE_AUTHOR={"Document","Deck","Spreadsheet","Text"}
+# Task bands that still apply on top (the analysis/coordination "thinking"); code & special are valued
+# via LOC / authoring, so their flat bands are dropped to avoid double-counting.
+KEEP_BANDS={"analysis","document","email","meeting","comms","general"}
+READ_SOURCE_EXT=DATA_CAT_EXT|{"pdf","docx","doc","pptx","ppt"}
+import re
+REVISION_WEIGHT=0.3   # later versions of the SAME artifact = revisions, not fresh authoring
+_VER_TAIL=re.compile(r'[-_ ]?v?\d+(\.\d+)?$')
+_VER_WORD=re.compile(r'[-_ ](v\d+|\d+d|\d+day|sample|draft|final|copy|mockup|backup|old|new)$')
+def art_base(name):
+    """Normalize an artifact name to its version-independent base so v6/v11/v17 (or report-v1/v2/final)
+    collapse to ONE artifact — used so iterative versions aren't counted as distinct deliverables."""
+    n=str(name).lower().rsplit('.',1)[0]
+    for _ in range(4):
+        n2=_VER_WORD.sub('',_VER_TAIL.sub('',n))
+        if n2==n: break
+        n=n2
+    return n.strip('-_ ') or str(name).lower()
+
 def hrs(m): return round(m/60,1)
 def round_to_total(parts_min, total_hours):
     """Round each part (minutes) to 1-decimal hours so the parts sum EXACTLY to total_hours."""
@@ -88,8 +122,6 @@ def round_to_total(parts_min, total_hours):
     order=sorted(range(len(raw)), key=lambda i: raw[i]-fl[i], reverse=True)
     for i in range(max(rem,0)): fl[order[i%len(order)]]+=1
     return [round(t/10.0,1) for t in fl]
-def read_min(ext): return READ_IMG if ext.lower() in IMG_EXT else READ_DOC
-def author_min(ext): return AUTHOR.get(ext.lower(),AUTHOR_DEFAULT)
 def out_cat(ext):
     e=ext.lower()
     if e in DATA_CAT_EXT: return "Analysis & Research"
@@ -103,17 +135,13 @@ def _ext(a):
 def _name(a):
     return a.get("name","artifact") if isinstance(a,dict) else str(a)
 
-def session_expert(tasks, inputs, outputs, aband, gband, read_w, author_w):
-    """Expert-clock minutes for one session at the given band/weight setting."""
-    non_doc_base = 0
-    for c in tasks:
-        if c == "document": continue            # authoring captured per-output
-        if c == "analysis": non_doc_base += aband
-        elif c == "general": non_doc_base += gband
-        else: non_doc_base += CATS.get(c,CATS["general"])[1]
-    read_total   = sum(read_min(_ext(a)) for a in inputs) * read_w
-    author_total = sum(author_min(_ext(a)) for a in outputs) * author_w
-    return non_doc_base + read_total + author_total
+def session_expert(runs, idx):
+    """Deck-anchored expert clock (Cowork Time-Savings Methodology): the SUM over RUNS of each run's
+    category band — minutes SAVED per run. Each band already sums the activity-instance chain inside ONE
+    run (e.g. code 56 = write+test+debug = 18min x 3 steps; doc 24 = 6.1min x 4 instances), so we count
+    RUNS and multiply by the band — never per-LOC, never a per-artifact authoring add-on (that would
+    double-count the chain). `runs` is {category: run_count}. idx: 0=low, 1=typical, 2=high."""
+    return sum(n * CATS.get(c, CATS["general"])[idx] for c, n in (runs or {}).items())
 
 def main(inp,out):
     d=json.load(open(inp)); meta=d["meta"]; sessions=d["sessions"]
@@ -125,46 +153,84 @@ def main(inp,out):
     icount=collections.Counter(); rmin=collections.Counter()
     heat=collections.Counter(); active=set()
     exp_t=exp_l=exp_h=0; assist_tot=0; conv=0
-    in_types=collections.Counter(); out_types=collections.Counter(); ingest_min=0; author_min_tot=0
+    in_types=collections.Counter(); out_types=collections.Counter()
+    proc_count=collections.Counter(); proc_min=collections.Counter()
+    skillmin=collections.Counter(); skillsessions=collections.Counter(); cauthored=collections.Counter()
+    skilldeliv=collections.Counter()    # how many deliverables a skill helped produce
+    deliverables=[]                     # per-output: name, type, skills, hours, value
+    inv=collections.defaultdict(list)   # artifact inventory: type label -> [items]
 
     for s in sessions:
         sid=s["id"]; date=s["date"]; hour=int(s.get("hour",12))
         goal=s.get("goal","Cowork session")
+        process=s.get("process","General Productivity")
         cats=s.get("tasks",[]) or ["general"]
         inputs=s.get("inputs",[]) or []
         outputs=s.get("outputs",[]) or []
         active.add(date)
 
-        e_t=session_expert(cats,inputs,outputs,71,5,1.0,1.0)
-        e_l=session_expert(cats,inputs,outputs,30,2,0.7,0.8)
-        e_h=session_expert(cats,inputs,outputs,92,8,1.3,1.2)
+        # RUNS per category (the deck's unit). Explicit telemetry-grounded counts when harvested;
+        # else fall back to one run per classified task.
+        runs = s.get("runs") or {c:1 for c in cats}
+        runs = {(c if c in CATS else "general"):int(n) for c,n in runs.items() if int(n)>0}
+        if not runs: runs={"general":1}
+        e_t=session_expert(runs,1)
+        e_l=session_expert(runs,0)
+        e_h=session_expert(runs,2)
         assist=max(ASSIST_FIXED + ASSIST_PER_ART*(len(inputs)+len(outputs)), 4)
         exp_t+=e_t; exp_l+=e_l; exp_h+=e_h; assist_tot+=assist
         spd = round(e_t/assist,1) if assist else 0
+        proc_count[process]+=1; proc_min[process]+=e_t
+        # roll up role-hours: split the session's expert time across the professional roles a
+        # billing firm would charge for this work (LLM-tagged; keyword fallback in classify.py)
+        prof_roles = [r for r in (s.get("professional_roles") or []) if r]
+        if prof_roles:
+            rshare = e_t / len(prof_roles)
+            for rname in prof_roles:
+                rmin[rname] += rshare
 
-        has_analysis = "analysis" in cats
-        for c in cats:
-            tasks.append({"session":sid,"category":c})
-            ccount[c]+=1; icount[INTENT[c]]+=1
-            if c=="document": continue
-            band = 71 if c=="analysis" else (5 if c=="general" else CATS.get(c,CATS["general"])[1])
-            catmin[CATS.get(c,CATS["general"])[3]] += band
-            rmin[ROLE[c]] += band
-        read_bucket = "Analysis & Research" if has_analysis else "General assistance / Other"
+        # expert clock = Σ RUNS × the research-anchored band per category (deck methodology)
+        for c,n in runs.items():
+            tasks.append({"session":sid,"category":c,"runs":n})
+            ccount[c]+=n; icount[INTENT.get(c,"Researching")]+=n
+            catmin[CATS.get(c,CATS["general"])[3]] += n*CATS.get(c,CATS["general"])[1]
         for a in inputs:
-            catmin[read_bucket] += read_min(_ext(a))
-            ingest_min += read_min(_ext(a)); in_types[type_label(_ext(a))] += 1
+            in_types[type_label(_ext(a))] += 1
+
+        # ---- per-deliverable hours: an equal share of the session's research-anchored
+        #      expert time, so deliverables sum back to e_t. ----
+        dmin = (e_t / len(outputs)) if outputs else 0
+        sess_skills=[x for x in (s.get("skills") or []) if x]   # fallback for outputs w/o own tags
         for a in outputs:
-            catmin[out_cat(_ext(a))] += author_min(_ext(a))
-            rmin["Content Writer / Communicator"] += author_min(_ext(a))
-            author_min_tot += author_min(_ext(a)); out_types[type_label(_ext(a))] += 1
+            cauthored[out_cat(_ext(a))] += 1
+            out_types[type_label(_ext(a))] += 1
             afiles.append(_name(a)); artifacts.append({"session":sid,"name":_name(a),"ext":_ext(a),"date":date})
+            inv[type_label(_ext(a))].append({"name":_name(a),"date":date,"ext":_ext(a)})
+            # deliverable record: hours + per-deliverable skills (semantic; falls back to session tags)
+            dskills = [x for x in (a.get("skills") or []) if x] or sess_skills
+            deliverables.append({"name":_name(a),"type":type_label(_ext(a)),"ext":_ext(a),"date":date,
+                                 "session":sid,"skills":dskills,"hours":hrs(dmin),
+                                 "value":round(hrs(dmin)*rate)})
+            # roll skill hours up FROM the deliverable (hours-weighted)
+            if dskills:
+                share=dmin/len(dskills)
+                for name in dskills:
+                    skillmin[name]+=share; skilldeliv[name]+=1
+
+        # ---- chat-only sessions (no deliverable): still credit their session-level skills ----
+        if not outputs and sess_skills:
+            share=e_t/len(sess_skills)
+            for name in sess_skills:
+                skillmin[name]+=share; skillsessions[name]+=1
 
         heat[(date,hour)] += len(cats)
-        goals.append({"session":sid,"date":date,"title":goal,
+        goals.append({"session":sid,"date":date,"title":goal,"process":process,
+                      "value_pillar":s.get("value_pillar","Transformation"),
+                      "pillar_css":s.get("pillar_css","trans"),
+                      "job":s.get("job","Other"),"jtbd":s.get("jtbd",""),
                       "minutes_typical":round(e_t),"hours_typical":hrs(e_t),
                       "categories":sorted({CATS.get(c,CATS["general"])[3] for c in cats}),
-                      "n_tasks":len(cats),"artifacts":[_name(a) for a in outputs],
+                      "n_tasks":int(sum(runs.values())),"artifacts":[_name(a) for a in outputs],
                       "speed_x":spd,"exec_min":assist,
                       "conversational":(len(outputs)==0)})
         if not outputs: conv+=1
@@ -184,24 +250,30 @@ def main(inp,out):
         mn=catmin[label]
         categories.append({"key":k,"label":label,"low_per_task":CATS[k][0],
             "typical_per_task":CATS[k][1],"high_per_task":CATS[k][2],
-            "tasks":ccount[k],"minutes_typical":round(mn),
+            "tasks":ccount[k],"authored_outputs":cauthored[label],"minutes_typical":round(mn),
             "hours_typical":hrs(mn),"value_typical":round(hrs(mn)*rate)})
     categories.sort(key=lambda c:-c["hours_typical"])
 
+    # ---- skills augmented (controlled vocabulary, hours rolled up from per-deliverable tags) ----
+    skills_aug=[{"skill":n,"hours":hrs(m),"value":round(hrs(m)*rate),
+                 "deliverables":skilldeliv[n],"sessions":skillsessions[n]}
+                for n,m in skillmin.most_common()]
+    # ---- categorized artifact inventory (what Cowork actually produced) ----
+    INV_ORDER=["Deck","Document","Spreadsheet","Web page","Script","Notebook","Query","Image","Text","File"]
+    INV_ICON={"Deck":"\U0001F4CA","Document":"\U0001F4C4","Spreadsheet":"\U0001F4C8","Web page":"\U0001F310",
+              "Script":"⚙️","Notebook":"\U0001F4D3","Query":"\U0001F50D","Image":"\U0001F5BC️",
+              "Text":"\U0001F4DD","File":"\U0001F4CE"}
+    inventory=[]
+    for lbl in INV_ORDER+[k for k in inv if k not in INV_ORDER]:
+        items=inv.get(lbl)
+        if not items: continue
+        inventory.append({"type":lbl,"icon":INV_ICON.get(lbl,"\U0001F4CE"),"count":len(items),
+                          "items":[{"name":it["name"],"date":it["date"]} for it in items]})
+
     n_in=sum(in_types.values()); n_out=sum(out_types.values())
-    reason_min=max(exp_t-ingest_min-author_min_tot,0)   # analysis/synthesis: the expert clock minus read+author
-    ph=round_to_total([ingest_min,reason_min,author_min_tot], H_t)  # 3 phases sum EXACTLY to expert hours
     io={"inputs_total":n_in,"outputs_total":n_out,
-        "ingest_minutes":round(ingest_min),"ingest_hours":ph[0],
-        "author_minutes":round(author_min_tot),"author_hours":ph[2],
-        "reason_minutes":round(reason_min),"reason_hours":ph[1],
         "expert_hours":H_t,
         "per_deliverable":(round(n_in/n_out,1) if n_out else None),
-        "phases":[
-          {"label":"Ingest & triage sources","hours":ph[0],"min":round(ingest_min)},
-          {"label":"Analyze & synthesize","hours":ph[1],"min":round(reason_min)},
-          {"label":"Author deliverables","hours":ph[2],"min":round(author_min_tot)},
-        ],
         "inputs_by_type":[{"label":l,"count":c} for l,c in in_types.most_common()],
         "outputs_by_type":[{"label":l,"count":c} for l,c in out_types.most_common()]}
 
@@ -209,9 +281,9 @@ def main(inp,out):
      "meta":{"user":meta.get("user","User"),"email":meta.get("email",""),
              "generated":meta.get("generated",""),"window":win,
              "methodology":"Cowork Time-Savings Methodology v4 + v5 artifact-scaled speed multiplier",
-             "hourly_rate_default":rate,"seat_cost_month":0},
+             "hourly_rate_default":rate},
      "kpis":{"sessions":len(sessions),"run_tasks":sum(ccount.values()),
-             "artifacts":len(afiles),"active_days":len(active),
+             "artifacts":len({art_base(n) for n in afiles}),"active_days":len(active),
              "hours_saved_typical":H_t,"hours_per_active_day":round(H_t/nday,1),
              "speed_multiplier":spd_t,"exec_hours":ex_h,
              "timed_sessions":len(sessions),"conversational_sessions":conv},
@@ -225,7 +297,13 @@ def main(inp,out):
      "io":io,
      "categories":categories,
      "intents":[{"intent":i,"tasks":c} for i,c in icount.most_common()],
+     "processes":[{"process":p,"sessions":proc_count[p],"minutes_typical":round(proc_min[p]),
+                   "hours_typical":hrs(proc_min[p]),"value_typical":round(hrs(proc_min[p])*rate)}
+                  for p,_ in proc_min.most_common()],
      "roles":[{"role":r,"hours":hrs(mn),"value":round(hrs(mn)*rate)} for r,mn in rmin.most_common()],
+     "skills_augmented":skills_aug,
+     "inventory":inventory,
+     "deliverables":sorted(deliverables,key=lambda x:-x["hours"]),
      "heatmap":[{"date":dd,"hour":h,"count":c} for (dd,h),c in sorted(heat.items())],
      "goals":sorted(goals,key=lambda g:-g["minutes_typical"]),
      "tasks":tasks,"artifacts":artifacts,

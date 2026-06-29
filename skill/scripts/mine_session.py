@@ -42,7 +42,7 @@ def parse_ts(s):
     try: return datetime.datetime.fromisoformat(s.replace("Z","+00:00"))
     except Exception: return None
 
-def main(transcript, out):
+def main(transcript, out, log=None):
     transcript=transcript or find_transcript()
     if not transcript or not os.path.exists(transcript):
         print("No transcript found"); return
@@ -75,6 +75,20 @@ def main(transcript, out):
     exec_min=None
     if len(ts)>=2:
         exec_min=round((max(ts)-min(ts)).total_seconds()/60,1)
+    # ---- runs per category (the deck's unit), from write/test/debug & research tool-chains ----
+    # code run = write->test->debug chain ~ 6 code-edit actions/run; analysis run = the 5-phase
+    # cognitive chain ~ 5 research-tool calls/run. compute.py multiplies runs x the cited band.
+    _CODE={"Edit","Write","MultiEdit","NotebookEdit"}
+    _RESEARCH={"mcp__m365_search__SearchM365","mcp__core__web_search","mcp__core__web_fetch",
+        "mcp__outlook__ListMessages","mcp__outlook__GetMessage","mcp__graph__QueryGraph",
+        "mcp__graph__GetMyRecentTranscripts","mcp__outlook_calendar__ListCalendarView",
+        "mcp__sharepoint_onedrive__SearchDrive","mcp__sharepoint_onedrive__ReadFileContent"}
+    _ce=sum(v for k,v in tools.items() if k in _CODE)
+    _rs=sum(v for k,v in tools.items() if k in _RESEARCH)
+    runs_est={}
+    if _ce: runs_est["code"]=max(1,round(_ce/6))
+    if _rs: runs_est["analysis"]=max(1,round(_rs/5))
+
     rec={
         "id": sid[:8],
         "session_id": sid,
@@ -85,12 +99,29 @@ def main(transcript, out):
         "tool_calls": ntool,
         "tools_by_name": dict(sorted(tools.items(), key=lambda x:-x[1])),
         "distinct_tools": len(tools),
+        "runs": runs_est,
         "turns": {"user": nuser, "assistant": nasst},
         "artifacts": sorted(artifacts),
         "produced_artifact": bool(artifacts),
         "source": "session-transcript",
     }
     json.dump(rec, open(out,"w"), indent=1)
+    if log:
+        # Upsert this session into a durable log (keyed by 8-char id, latest wins) so
+        # chat-only / folder-less sessions are still counted by future ROI reports.
+        try:
+            try:
+                with open(log) as f: db=json.load(f)
+            except Exception: db={}
+            if not isinstance(db, dict): db={}
+            db[rec["id"]] = rec
+            os.makedirs(os.path.dirname(log) or ".", exist_ok=True)
+            tmp=log+".tmp"
+            with open(tmp,"w") as f: json.dump(db, f, indent=1)
+            os.replace(tmp, log)
+            print(f"telemetry logged -> {log} ({len(db)} sessions)")
+        except Exception as e:
+            print("telemetry log skipped:", e)
     print(f"Session {rec['id']}: exec={exec_min} min, {ntool} tool calls "
           f"({len(tools)} distinct), {len(artifacts)} artifact(s), "
           f"{'produced files' if artifacts else 'CHAT-ONLY'}.")
@@ -100,4 +131,5 @@ if __name__=="__main__":
     ap=argparse.ArgumentParser()
     ap.add_argument("--transcript", default=None)
     ap.add_argument("--out", default="working/session_telemetry.json")
-    a=ap.parse_args(); main(a.transcript,a.out)
+    ap.add_argument("--log", default=None, help="durable telemetry log (JSON dict) to upsert into")
+    a=ap.parse_args(); main(a.transcript,a.out,a.log)
