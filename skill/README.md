@@ -19,12 +19,6 @@ and the four Value Pillars.
 > ~6 code-edits/code-run, ~5 research-calls/analysis-run). No per-LOC, no authoring add-on. See
 > [`CHANGELOG-v20.md`](CHANGELOG-v20.md).
 >
-> **v19:** **real per-session cost** — the agent reads Cowork's `/cost` (Copilot Credits) by driving the
-> browser to the web app, screenshotting each session's "N credits used for this task so far," and logging
-> it to a durable ledger. The report gains a **"Credits · cost"** column (credits × **1¢/credit**, GA list).
-> No estimation — the number can't be recomputed without Microsoft's exact rate card, so it's read live.
-> Works whether you use the browser or the native Copilot app. See [`CHANGELOG-v19.md`](CHANGELOG-v19.md).
->
 > **v18:** the harvest is now an **allow-list scoped to the Cowork app** — it reads **all three**
 > `Documents/Cowork/` layouts (`Tasks/<goal>-<date>/`, root `<goal>-<date>/`, and legacy
 > `sessions/<uuid>/`), counts only items created by the Cowork app id, and **never touches
@@ -111,9 +105,8 @@ to Cowork-app-created artifacts generalises cleanly.
 - **Hero** — research-anchored **Time Saved** (conservative / typical / optimistic) + **Value**
 - **KPIs** — sessions, run tasks, deliverables, active days, expert-equivalent hours
 - **Value at a glance** — the four Value Pillars with example KPIs
-- **Work by business process** — an upfront **Job ▸ Business Process ▸ JTBD** visual, then a table you
-  can **toggle between Business Process and Job-to-be-Done** (banded by Job × Value Pillar; auto-hiding
-  **session-cost** column)
+- **Work by business process** — **Process ▸ JTBD ▸ Project**, toggleable between a By-process view and
+  a Business-Value-Pillar view
 - **Where the time went — by task category** — research-anchored bands
 - **Roles Cowork assembled for me** — the **exact professional roles a billing firm would charge** for
   your work (Data Analyst, Management Consultant, Software Engineer, …), each **linked** to a job
