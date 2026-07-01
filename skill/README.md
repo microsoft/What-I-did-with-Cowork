@@ -5,9 +5,13 @@ Copilot Cowork session history in OneDrive. It leads with **research-anchored Ti
 **professional-services-equivalent Value**, then maps your work to your own Jobs, Business Processes,
 and the four Value Pillars.
 
-> **v22:** removes the Copilot-credits feature (no credits question, no `/cost` browser sweep). The
-> report stays the **full, detailed personal impact report** — only credits are gone. See
-> [`CHANGELOG-v22.md`](CHANGELOG-v22.md).
+> **v24:** the durable taxonomy memory is now **per-user and owner-scoped** — the registry lives on the
+> user's own mount (syncs to **their** OneDrive `Documents/Cowork/`), carries an `owner` stamp, and is
+> only used when the owner matches the invoking user; a first run mints processes from the user's own
+> sessions. See [`CHANGELOG-v24.md`](CHANGELOG-v24.md).
+>
+> **v23:** **Business Process** is the aggregation anchor (**Process ▸ JTBD ▸ Project**) with a durable
+> taxonomy memory so process/project names stay stable across runs. See [`CHANGELOG-v23.md`](CHANGELOG-v23.md).
 >
 > **v20:** value model is now **RUNS × BAND**, anchored to the Cowork Time-Savings methodology deck —
 > time saved = Σ runs × each run's category band (the band already contains the write→test→debug /
@@ -36,7 +40,7 @@ and the four Value Pillars.
 
 ## Get Started in 4 Steps
 
-1. **Download** `cowork-roi-report-skill-v22.zip`. *(No need to unzip — attach it as-is.)*
+1. **Download** `cowork-roi-report-skill-v24.zip`. *(No need to unzip — attach it as-is.)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session.
 3. **Click the ➕ (plus) symbol** to attach the zip file, then send: **Add this skill.**
 4. Once it's added, ask: **Generate my impact summary report.**
@@ -51,17 +55,22 @@ You'll be asked which period to measure (7, 15 or 30 days), then the report is b
 cowork-roi-report/
 ├── SKILL.md                     # skill definition + workflow (loaded by Cowork)
 ├── README.md                    # this file
-├── CHANGELOG-v22.md             # latest — Copilot-credits feature removed (detailed report unchanged)
+├── CHANGELOG-v24.md             # latest — per-user, owner-scoped taxonomy memory
+├── CHANGELOG-v23.md             # process-anchored taxonomy + durable taxonomy memory
 ├── CHANGELOG-v20.md             # value model = runs × band (methodology-deck-anchored)
-├── CHANGELOG-v19.md             # real /cost credits via browser sweep, Credits·cost column
 ├── CHANGELOG-v18.md             # Cowork-app allow-list harvest, Scout excluded
-├── CHANGELOG-v15.md             # (+ v5/v6/v11/v13/v14/v15/v16 history)
+├── CHANGELOG-v15.md             # (+ v5/v6/v11/v13/v14/v16/v19/v21/v22 history)
 ├── scripts/
+│   ├── reconcile_taxonomy.py    # align-first / create-if-novel; owner-scoped registry; runs before classify.py
 │   ├── classify.py              # deterministic classifier → inputs/outputs + tasks schema
 │   ├── compute.py               # applies the methodology → payload JSON
 │   ├── build_report.py          # renders the self-contained HTML report
 │   ├── mine_session.py          # mines the live session transcript for real run-time (telemetry hook)
+│   ├── statusline_cost.py       # optional status-line cost helper
 │   ├── apqc_taxonomy.json       # generic APQC fallback business-process taxonomy
+│   ├── roles_taxonomy.json      # role keyword fallback for "roles assembled"
+│   ├── process_overrides.json   # per-user session→process map (ships empty `{}`; written to working/ at run time)
+│   ├── process_overrides.example.json  # example override map
 │   └── skills_vocabulary.json   # controlled vocabulary for "skills augmented"
 ├── references/
 │   ├── map-my-work-playbook.md  # derives your own Jobs ▸ Processes ▸ Workflows (run inline at step 4b)
@@ -175,16 +184,19 @@ report's Glossary and in `build_report.py`.
 
 ---
 
-## Optional hook — capture chat-only sessions automatically
+## Optional hooks — capture cost & chat-only sessions automatically
 
-A `settings.json` hook enriches the report over time (forward-looking — it can't backfill past
-sessions). Wire it once, then activate by opening `/hooks` or restarting:
+Two `settings.json` hooks enrich the report over time (both forward-looking — they can't backfill
+past sessions). Wire them once, then activate by opening `/hooks` or restarting:
 
+- **statusLine → `statusline_cost.py`** logs each live session's real cost to
+  `cowork-session-costs.json`, filling the session-cost column. (The column auto-hides when there's
+  no cost data.)
 - **Stop hook → `mine_session.py --log …cowork-session-telemetry.json`** records every session
   (run-time, tools, artifacts, `produced_artifact`) so **chat-only / folder-less sessions are
   counted**, not just those that saved a file.
 
-Only the *live* session is minable, so the log builds forward as you use Cowork.
+Only the *live* session is minable, so the logs build forward as you use Cowork.
 
 ---
 

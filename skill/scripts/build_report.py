@@ -206,14 +206,25 @@ def build(data, out_path, anon=False):
         key=(g.get("job","Other"), g.get("value_pillar","Transformation"))
         combo_groups.setdefault(key,[]).append(g)
 
-    # Project-impact tag (hours saved · value · speed) — no cost/credits in this version
+    # Drop the Session-cost column entirely when NO session has captured cost
+    has_cost = any(isinstance(g.get("cost_usd"), (int, float)) for g in goals)
+    ncols = 4 if has_cost else 3
+    cost_th = "<th>Credits · cost</th>" if has_cost else ""
     def _impact(g):
         val=round(g['hours_typical']*rate)
         spd=(f' · {g["speed_x"]}× faster' if g.get("speed_x") else "")
         return (f'<b data-hours="{g["hours_typical"]}">{g["hours_typical"]}h saved</b> · '
                 f'<span class="g-v" data-hours="{g["hours_typical"]}">${val:,}</span>{spd}')
+    def _cost_tag(g):
+        cr=g.get("credits"); cv=g.get("cost_usd")
+        if isinstance(cr,(int,float)):
+            return f' &middot; <b style="color:var(--blue)">{cr:,.1f} cr</b> <span style="color:var(--mut)">(${cv:,.2f})</span>'
+        if isinstance(cv,(int,float)):
+            return f' &middot; <b style="color:var(--blue)">${cv:,.2f}</b>'
+        return ''
 
-    # ===== VIEW 1 (By JTBD): Job ▸ Process ▸ JTBD ▸ the projects Cowork did (+ impact) =====
+    # jobmap retained ONLY for the anonymized (team rollup) override below — the personal
+    # report no longer pivots on Job. (cowork-roi-member / -aggregated migrate to Process later.)
     jobmap={}
     for g in goals:
         if g.get("minutes_typical",0)==0: continue
@@ -222,31 +233,51 @@ def build(data, out_path, anon=False):
                             "pillar":g.get("value_pillar","Transformation"),"projects":[]})
         d["hours"]+=g.get("hours_typical",0); d["projects"].append(g)
         if not d["jtbd"] and g.get("jtbd"): d["jtbd"]=g["jtbd"]
+
+    # ===== VIEW 1 (primary): BUSINESS PROCESS ▸ JTBD ▸ the projects beneath each JTBD =====
+    # A genuine 3-level ladder: Process (anchor) → one-or-more JTBD → the projects under each.
+    # Projects nest under their JTBD, so a process with several JTBDs renders several indented groups.
+    procmap={}
+    for g in goals:
+        if g.get("minutes_typical",0)==0: continue
+        proc=g.get("process","General Productivity")
+        d=procmap.setdefault(proc,{"hours":0.0,"sessions":0,
+                              "pillar":g.get("value_pillar","Transformation"),"jt":{}})
+        d["hours"]+=g.get("hours_typical",0); d["sessions"]+=1
+        jt=g.get("jtbd","") or "—"
+        grp=d["jt"].setdefault(jt,{"hours":0.0,"projects":[]})
+        grp["hours"]+=g.get("hours_typical",0); grp["projects"].append(g)
+    total_ph=sum(d["hours"] for d in procmap.values()) or 1
     jtbd_tree_html=""
-    if jobmap:
+    if procmap:
         tree=""
-        for job in sorted(jobmap,key=lambda j:-sum(x["hours"] for x in jobmap[j].values())):
-            jobh=sum(x["hours"] for x in jobmap[job].values())
-            procs=""
-            for proc,d in sorted(jobmap[job].items(),key=lambda kv:-kv[1]["hours"]):
-                _,pfg=PILLAR_COLORS.get(d["pillar"],("#F3F2F1","#605E5C"))
-                jt=esc(d["jtbd"]) if d["jtbd"] else "—"
+        for proc in sorted(procmap,key=lambda p:-procmap[p]["hours"]):
+            d=procmap[proc]
+            _,pfg=PILLAR_COLORS.get(d["pillar"],("#F3F2F1","#605E5C"))
+            pct=round(d["hours"]/total_ph*100); pval=round(d["hours"]*rate)
+            nproj=sum(len(grp["projects"]) for grp in d["jt"].values())
+            # one indented group per JTBD (most-valuable first); projects nest beneath it
+            groups=""
+            for jt,grp in sorted(d["jt"].items(),key=lambda kv:-kv[1]["hours"]):
                 projs=""
-                for g in sorted(d["projects"],key=lambda x:-x["hours_typical"]):
+                for g in sorted(grp["projects"],key=lambda x:-x["hours_typical"]):
                     cb=' <span class="pill conv">chat-only</span>' if g.get("conversational") else ""
                     projs+=(f'<div class="wbp-proj"><div class="wbp-proj-t">{esc(g["title"])}{cb}</div>'
-                            f'<div class="wbp-proj-i">{_impact(g)}</div></div>')
-                procs+=(f'<div class="wbp-proc" style="border-left:3px solid {pfg}">'
-                        f'<div class="wbp-proc-name"><span class="wbp-k" style="color:{pfg}">PROCESS</span>'
-                        f'<span class="pill proc">{esc(proc)}</span><span class="wbp-h">{d["hours"]:.1f}h</span></div>'
-                        f'<div class="wbp-sub"><span class="wbp-k" style="color:{pfg}">JTBD</span>{jt}</div>'
-                        f'<div class="wbp-sub"><span class="wbp-k">PROJECTS</span><div class="wbp-projs">{projs}</div></div></div>')
-            nproj=sum(len(d["projects"]) for d in jobmap[job].values())
-            tree+=(f'<details class="wbp-acc"><summary class="wbp-job-h">'
-                   f'<span class="wbp-k2">JOB</span><span class="wbp-acc-t">{esc(job)}</span>'
-                   f'<span class="wbp-acc-meta">{nproj} project{"s" if nproj!=1 else ""}</span>'
-                   f'<span class="wbp-h">{jobh:.1f}h</span><span class="chev">▸</span></summary>'
-                   f'<div class="wbp-acc-body">{procs}</div></details>')
+                            f'<div class="wbp-proj-i">{_impact(g)}{_cost_tag(g)}</div></div>')
+                groups+=(f'<div class="wbp-jtg" style="border-left-color:{pfg}">'
+                         f'<div class="wbp-jt"><span class="wbp-jt-k" style="color:{pfg}">JTBD</span>'
+                         f'<span class="wbp-jt-t">{esc(jt)}</span>'
+                         f'<span class="wbp-jt-h">{grp["hours"]:.1f}h</span></div>'
+                         f'<div class="wbp-projs">{projs}</div></div>')
+            tree+=(f'<details class="wbp-acc"><summary class="wbp-proc-h">'
+                   f'<span class="wbp-k2" style="color:{pfg}">PROCESS</span>'
+                   f'<span class="wbp-acc-t">{esc(proc)}</span>'
+                   f'<span class="wbp-acc-meta">{d["sessions"]} session{"s" if d["sessions"]!=1 else ""} · '
+                   f'{nproj} project{"s" if nproj!=1 else ""} · {pct}% of time</span>'
+                   f'<span class="wbp-h">{d["hours"]:.1f}h · '
+                   f'<span class="g-v" data-hours="{d["hours"]:.1f}">${pval:,}</span></span>'
+                   f'<span class="chev">▸</span></summary>'
+                   f'<div class="wbp-acc-body">{groups}</div></details>')
         jtbd_tree_html=f'<div class="wbp-tree">{tree}</div>'
 
     # ===== VIEW 2 (By Business Value Pillar): collapsible accordion per pillar =====
@@ -264,17 +295,23 @@ def build(data, out_path, anon=False):
         rows=""
         for g in gs:
             cb=' <span class="pill conv">chat-only</span>' if g.get("conversational") else ""
+            cv=g.get("cost_usd"); cr=g.get("credits")
+            cost_td=((f'<td class="g-h" style="white-space:nowrap">'
+                      +(f'<b>{cr:,.1f} cr</b><br><span class="muted">${cv:,.2f}</span>'
+                        if isinstance(cr,(int,float))
+                        else (f'<b>${cv:,.2f}</b>' if isinstance(cv,(int,float)) else '<span class="muted-na">n/a</span>'))
+                      +'</td>') if has_cost else "")
             rows+=(f'<tr style="border-left:4px solid {fg}">'
                    f'<td><div class="g-title">{esc(g["title"])}{cb}</div>'
-                   f'<div class="g-meta">{esc(g.get("job","Other"))} &middot; {esc(g.get("process","—"))}</div></td>'
-                   f'<td class="g-h">{_impact(g)}</td></tr>')
+                   f'<div class="g-meta">{esc(g.get("process","—"))}</div></td>'
+                   f'<td class="g-h">{_impact(g)}</td>{cost_td}</tr>')
         pillar_acc_html+=(
             f'<details class="wbp-acc"><summary class="wbp-pillar-h">'
             f'<span class="bvm-pill {css}">{esc(pillar)}</span>'
             f'<span class="wbp-acc-meta">{len(gs)} project{"s" if len(gs)!=1 else ""}</span>'
             f'<span class="wbp-h">{ph:.1f}h</span><span class="chev">▸</span></summary>'
             f'<div class="wbp-acc-body"><div class="card" style="margin:6px 0 0"><table class="tbl">'
-            f'<thead><tr><th>Project</th><th>Assistance offered</th></tr></thead>'
+            f'<thead><tr><th>Project</th><th>Assistance offered</th>{cost_th}</tr></thead>'
             f'<tbody>{rows}</tbody></table></div></div></details>')
 
     # ----- glossary -----
@@ -305,8 +342,38 @@ def build(data, out_path, anon=False):
         "hours":{"low":val["hours_low"],"typical":val["hours_typical"],"high":val["hours_high"]},
     })
 
-    # Copilot-credits / real-cost ROI removed in this version — no credits or cost is shown.
+    # ---- real-cost ROI: research-anchored value vs real Copilot-credit cost (credits x $0.01 list) ----
+    # Coverage-honest: the ROI multiple compares value and cost over the SAME covered sessions only
+    # (the ones carrying a real /cost reading), so partial coverage can never inflate the multiple.
+    _covered=[g for g in goals if isinstance(g.get("cost_usd"),(int,float))]
+    _real_cost=sum(g["cost_usd"] for g in _covered)
+    _real_cred=sum(g["credits"] for g in _covered if isinstance(g.get("credits"),(int,float)))
+    _roi_val=sum(round(g.get("hours_typical",0)*rate) for g in _covered)   # value of covered sessions only
+    _roi_mult=(_roi_val/_real_cost) if _real_cost else None
+    _n_total=len([g for g in goals if g.get("minutes_typical",0)>0]) or len(goals)
+    _n_cov=len(_covered)
     roi_html=""
+    if _real_cost:
+        _cov_note=(f'Measured on <b>{_n_cov}</b> of {_n_total} sessions (real /cost). '
+                   f'Value &amp; cost both cover those {_n_cov} sessions only — apples-to-apples.'
+                   if _n_cov<_n_total else 'All sessions carry a real /cost reading.')
+        roi_html=(
+            '<div class="card" style="margin-top:14px">'
+            '<div style="display:flex;flex-wrap:wrap;gap:16px 30px;align-items:center;justify-content:space-between">'
+            '<div><div class="roi-cap">Real cost &mdash; Copilot Credits</div>'
+            f'<div class="roi-val" style="color:var(--blue)">${_real_cost:,.2f}</div>'
+            f'<div class="roi-cap">{_real_cred:,.0f} credits &times; $0.01 (pay-as-you-go list)</div></div>'
+            '<div style="font-size:26px;color:var(--mut);font-weight:300">vs</div>'
+            '<div><div class="roi-cap">Professional-services value (covered sessions)</div>'
+            f'<div class="roi-val" style="color:var(--green)">${_roi_val:,}</div>'
+            '<div class="roi-cap">research-anchored, at your rate</div></div>'
+            '<div style="font-size:26px;color:var(--mut);font-weight:300">=</div>'
+            '<div><div class="roi-cap">Return on Cowork spend</div>'
+            f'<div class="roi-val" style="color:var(--green)">{_roi_mult:.0f}&times;</div>'
+            f'<div class="roi-cap">value &divide; real cost</div></div>'
+            '</div>'
+            f'<div style="margin-top:10px;font-size:11.5px;color:var(--mut);border-top:1px solid var(--line);padding-top:8px">{_cov_note}</div>'
+            '</div>')
     # ===== ANONYMIZED (team-safe) overrides =====
     # Strip every identifiable string — project/chat names, JTBD prose, deliverable filenames —
     # leaving only aggregate totals, generic categories, skills, and dates. Used for the team rollup
@@ -460,10 +527,17 @@ a{{color:var(--blue)}}
 .wbp-toggle{{display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:12px;color:var(--mut)}}
 .wbp-btn{{border:1px solid #CFCFCF;background:#fff;border-radius:14px;padding:3px 12px;font-size:12px;font-weight:600;cursor:pointer;color:var(--mut)}}
 .wbp-btn.active{{background:var(--blue);color:#fff;border-color:var(--blue)}}
-.wbp-projs{{margin-top:4px}}
+/* 3-level ladder: Process (accordion header) ▸ JTBD group (indented, bold) ▸ projects (further indented, unbolded) */
+.wbp-jtg{{margin:12px 0 0;padding-left:13px;border-left:2px solid #E1DFDD}}
+.wbp-jtg:first-child{{margin-top:6px}}
+.wbp-jt{{display:flex;align-items:baseline;gap:8px}}
+.wbp-jt-k{{font-size:9px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;flex:none}}
+.wbp-jt-t{{font-weight:700;font-size:13.5px;color:#322F2D;letter-spacing:-.1px}}
+.wbp-jt-h{{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--mut);white-space:nowrap}}
+.wbp-projs{{margin:7px 0 2px 9px;padding-left:14px;border-left:1px dotted #D6D4D2}}
 .wbp-proj{{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:5px 0;border-top:1px dotted #EEE}}
 .wbp-proj:first-child{{border-top:none}}
-.wbp-proj-t{{font-size:13px;font-weight:600;color:var(--ink)}}
+.wbp-proj-t{{font-size:12.5px;font-weight:400;color:#3B3A39}}
 .wbp-proj-i{{font-size:12px;color:var(--mut);white-space:nowrap;text-align:right}}
 .wbp-pillarview{{display:none}}
 #wbpView.mode-pillar .wbp-jtbdview{{display:none}}
@@ -590,23 +664,22 @@ html{{scroll-behavior:smooth}}
   <div class="card">{role_rows}</div>
 
   <h2><span class="sec">📦</span> Work by business process</h2>
-  <p class="lead">The projects Cowork delivered, seen two ways — by the <b>Job-to-be-Done</b> they served, or by the <b>Business Value Pillar</b> they create value in. Same projects, same impact, two lenses. <b>Click any row to expand</b> the projects beneath it.</p>
-  <details class="gl" style="margin:0 0 14px"><summary>How to read this — Jobs, Processes, JTBDs &amp; the two lenses <span class="chev">▸</span></summary>
+  <p class="lead">Your work anchored on the <b>Business Process</b> that produced it — each process carries the <b>Job-to-be-Done</b> it served and the <b>projects</b> beneath it — or seen by the <b>Business Value Pillar</b> it creates value in. Same projects, two lenses. <b>Click any process to expand</b> its JTBD and projects.</p>
+  <details class="gl" style="margin:0 0 14px"><summary>How to read this — Process ▸ JTBD ▸ Project &amp; the two lenses <span class="chev">▸</span></summary>
     <div class="gl-body"><div style="font-size:13px;line-height:1.75">
-      <p style="margin:0 0 9px">Your work rolls up a four-level ladder. <b>Value flows up the ladder; work flows down.</b></p>
-      <div><b>Job</b> &mdash; <i>why your role exists.</i> The durable outcome you own. A good test: if you were gone for a month, what value would disappear &mdash; and for whom?</div>
-      <div style="margin-top:7px">&nbsp;&nbsp;└ <b>Business Process</b> &mdash; <i>the repeatable &ldquo;machine&rdquo; that produces that outcome.</i> It has a customer and a metric, and it runs again and again &mdash; not a one-off.</div>
-      <div style="margin-top:7px">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ <b>Job-to-be-Done (JTBD)</b> &mdash; <i>the specific stakeholder outcome that process is &ldquo;hired&rdquo; to deliver</i> &mdash; what a real person actually needs done, and why.</div>
-      <div style="margin-top:7px">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ <b>Project</b> &mdash; <i>the actual thing Cowork delivered</i> for that JTBD, carrying its <b>impact</b>: expert-equivalent hours saved &middot; value &middot; speed.</div>
+      <p style="margin:0 0 9px">Your work rolls up a three-level ladder, anchored on Process. <b>Value flows up the ladder; work flows down.</b></p>
+      <div><b>Business Process</b> &mdash; <i>the repeatable &ldquo;machine&rdquo; that produces an outcome.</i> It has a customer and a metric, and it runs again and again &mdash; not a one-off. This is the anchor everything rolls up to.</div>
+      <div style="margin-top:7px">&nbsp;&nbsp;└ <b>Job-to-be-Done (JTBD)</b> &mdash; <i>the specific stakeholder outcome that process is &ldquo;hired&rdquo; to deliver</i> &mdash; what a real person actually needs done, and why.</div>
+      <div style="margin-top:7px">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ <b>Project</b> &mdash; <i>the actual thing Cowork delivered</i> for that JTBD, carrying its <b>impact</b>: expert-equivalent hours saved &middot; value &middot; speed.</div>
       <p style="margin:11px 0 4px"><b>The same projects, seen through two lenses:</b></p>
-      <div><b>&middot; By Job-to-be-Done</b> &mdash; the ladder above. Answers <i>&ldquo;what am I accountable for, and who does it serve?&rdquo;</i></div>
+      <div><b>&middot; By process</b> &mdash; the ladder above. Answers <i>&ldquo;which repeatable capabilities is my time going into, and who do they serve?&rdquo;</i></div>
       <div style="margin-top:4px"><b>&middot; By Business Value Pillar</b> &mdash; the same projects grouped by the kind of value they create &mdash; <b>Revenue Growth</b> (top-line), <b>Cost Reduction</b> (efficiency), <b>Risk Mitigation</b> (losses avoided), <b>Transformation</b> (new ways of working). Answers <i>&ldquo;what business value did this work create?&rdquo;</i></div>
     </div></div>
   </details>
   <div id="wbpView">
     <div class="wbp-toggle"><span>View:</span>
-      <button class="wbp-btn active" id="wbpJtbdBtn" onclick="wbpMode(false)">By Job-to-be-Done</button>
-      <button class="wbp-btn" id="wbpPillarBtn" onclick="wbpMode(true)">By Business Value Pillar</button>
+      <button class="wbp-btn active" id="wbpJtbdBtn" onclick="wbpMode(false)">By process</button>
+      <button class="wbp-btn" id="wbpPillarBtn" onclick="wbpMode(true)">By pillar</button>
       <span class="wbp-exp"><a href="#" onclick="wbpExpand(event,true)">Expand all</a> · <a href="#" onclick="wbpExpand(event,false)">Collapse all</a></span>
     </div>
     <div class="wbp-jtbdview">{jtbd_tree_html}</div>

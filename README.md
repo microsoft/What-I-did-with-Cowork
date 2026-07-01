@@ -25,18 +25,18 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 
 | Version | File | Status |
 |---|---|---|
-| **v23** | [`cowork-roi-report-skill-v23.zip`](cowork-roi-report-skill-v23.zip) | ✅ **Latest version** — recommended |
-| older | [`archive/`](archive) | Previous versions (kept for reference) |
+| **v24** | [`cowork-roi-report-skill-v24.zip`](cowork-roi-report-skill-v24.zip) | ✅ **Latest version** — recommended |
+| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v23) |
 
-### What's new in v23
+### What's new in v24
 
-v23 makes **Business Process the aggregation anchor** and adds a **durable taxonomy memory** so process and project names stay stable across runs instead of being re-invented each time:
+v24 makes the **durable taxonomy memory per-user and owner-scoped**, so each person's process and project names come from — and stay with — their own work:
 
-- **Process-anchored taxonomy.** The **Work by business process** section now rolls up as **Business Process ▸ JTBD ▸ Project** — the standalone **Job** layer is gone. Each process shows a subtotal (sessions · hours · value · % of time), with projects nested under their JTBD. **By process** is the default view; **By pillar** remains as a toggle.
-- **Durable taxonomy memory (align-first, create-if-novel).** A new `scripts/reconcile_taxonomy.py` runs before `classify.py`: it reuses a known Project, else aligns to an existing Process by keyword similarity, else mints a new one. A canonical registry (`~/.claude/cowork-process-registry.json`) is read first, aligned to, and persisted every run — so a run a week later locates the registry and aligns to it instead of inventing new names.
-- **`pct_time` rollup.** `compute.py` now carries a `pct_time` field per process; numbers still come only from `compute.py` (no hand math).
+- **Owner-scoped, per-user registry.** The taxonomy registry now lives on the user's own mount (syncing to **their** OneDrive `Documents/Cowork/` folder) under an owner-stamped, per-user filename derived from their email.
+- **Identity guard.** `reconcile_taxonomy.py` only uses a registry whose `owner` matches the invoking user; otherwise it starts fresh and mints processes from that user's own sessions. A new `--owner` argument (falling back to the harvested `meta.email`) keeps the registry scoped.
+- **Per-run scratch stays out of the bundle.** Overrides are written to `working/process_overrides.json` and read from there; the shipped `scripts/process_overrides.json` ships empty (`{}`) and no registry seed is bundled — a first run starts clean.
 
-Everything else is unchanged: the artifact-scaled two-clock methodology, the Cowork-app allow-list harvest across all three OneDrive layouts, KPIs, the four-pillar **Value at a glance** table, **Where the time went** by task category, **Roles Cowork assembled**, **Deliverables & the skills behind them**, the activity heatmap, and the methodology glossary with clickable sources. See [`skill/CHANGELOG-v23.md`](skill/CHANGELOG-v23.md) for full details.
+Everything else is unchanged from v23: the process-anchored **Process ▸ JTBD ▸ Project** taxonomy, the artifact-scaled two-clock methodology, KPIs, the four-pillar **Value at a glance** table, **Where the time went** by task category, **Roles Cowork assembled**, **Deliverables & the skills behind them**, the activity heatmap, and the methodology glossary with clickable sources. Numbers still come only from `compute.py`. See [`skill/CHANGELOG-v24.md`](skill/CHANGELOG-v24.md) for full details.
 
 ---
 
@@ -80,7 +80,7 @@ Your projects, seen two ways — by the **JTBD** they served within their **Busi
 
 ### Option 1 — Let Cowork install it for you (easiest)
 
-1. **Download** the latest version: [`cowork-roi-report-skill-v23.zip`](cowork-roi-report-skill-v23.zip) *(no need to unzip — attach it as-is)*
+1. **Download** the latest version: [`cowork-roi-report-skill-v24.zip`](cowork-roi-report-skill-v24.zip) *(no need to unzip — attach it as-is)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session
 3. **Click the ➕ (plus) symbol** to attach the zip file, then send:
 
@@ -91,7 +91,7 @@ Your projects, seen two ways — by the **JTBD** they served within their **Busi
 
 ### Option 2 — Manual install
 
-1. **Download** the latest version: [`cowork-roi-report-skill-v23.zip`](cowork-roi-report-skill-v23.zip)
+1. **Download** the latest version: [`cowork-roi-report-skill-v24.zip`](cowork-roi-report-skill-v24.zip)
 2. **Extract** the zip
 3. **Copy** the `cowork-roi-report/` folder to your Cowork skills directory:
    ```
@@ -158,10 +158,11 @@ Sources: Stanford-WB, Microsoft Research, NBER, Forrester — all clickable in t
 cowork-roi-report/
 ├── SKILL.md                     # skill definition + workflow (loaded by Cowork)
 ├── README.md                    # technical documentation
-├── CHANGELOG-v23.md             # latest — Process-anchored taxonomy + durable taxonomy memory
+├── CHANGELOG-v24.md             # latest — per-user, owner-scoped taxonomy memory
+├── CHANGELOG-v23.md             # Process-anchored taxonomy + durable taxonomy memory
 ├── CHANGELOG-v5…v22.md          # full version history
 ├── scripts/
-│   ├── reconcile_taxonomy.py    # NEW — align-first/create-if-novel; runs before classify.py
+│   ├── reconcile_taxonomy.py    # align-first/create-if-novel; owner-scoped registry; runs before classify.py
 │   ├── classify.py              # deterministic ext→category classifier
 │   ├── compute.py               # applies the methodology → payload JSON (now with pct_time)
 │   ├── build_report.py          # renders the self-contained HTML report
@@ -170,7 +171,7 @@ cowork-roi-report/
 │   ├── apqc_taxonomy.json       # generic APQC fallback business-process taxonomy
 │   ├── roles_taxonomy.json      # role keyword fallback for "roles assembled"
 │   ├── skills_vocabulary.json   # controlled vocabulary for "skills augmented"
-│   ├── process_overrides.json   # per-user session→process map (regenerated at run time)
+│   ├── process_overrides.json   # per-user session→process map (ships empty `{}`; written to working/ at run time)
 │   └── process_overrides.example.json  # example override map
 ├── references/
 │   ├── map-my-work-playbook.md  # derives your own Processes ▸ JTBDs ▸ Projects (run inline)
@@ -179,7 +180,7 @@ cowork-roi-report/
     └── sample_sessions.json     # synthetic input (safe to share)
 ```
 
-The bundle also ships a `cowork-process-registry.seed.json` seed for the **durable taxonomy memory** — the canonical `~/.claude/cowork-process-registry.json` (Processes + known Projects) that is read first, aligned to, and persisted every run.
+The **durable taxonomy memory** is a per-user, owner-scoped registry (`~/.claude/cowork-process-registry.<user>.json`, Processes + known Projects) that is read first, aligned to, and persisted every run. It lives on the user's own mount (syncing to their OneDrive `Documents/Cowork/`) and is never bundled with the skill; a first run with no registry starts clean and mints processes from the user's own sessions.
 
 `map-my-work` is **folded in** as a reference playbook — there is no second skill to install, and it runs automatically when the report is generated. No third-party dependencies — **standard-library Python 3 only**.
 

@@ -61,10 +61,11 @@ pure business-process labeling across roles.
 
 Label overrides
 ---------------
-To hard-set a process label for specific sessions without touching the taxonomy,
-create scripts/process_overrides.json:
-    {"<session-id>": "Year End Summaries", "<other-id>": "Custom Label"}
-The classifier checks this file first and skips similarity scoring for matched IDs.
+reconcile_taxonomy.py writes a per-run overrides file to working/process_overrides.json
+(session_id -> process label or {process,pillar,job,jtbd}); pass it via --overrides.
+The classifier checks it first and skips similarity scoring for matched IDs. This file
+is per-run scratch and must NEVER live in the shippable scripts/ folder — that is how a
+prior version leaked one user's session→process mappings to everyone who ran the package.
 
 Usage: python classify.py --in working/cowork_raw.json --out working/cowork_sessions.json
 """
@@ -162,7 +163,10 @@ def nearest(goal: str, cat_hint: str, vectors: list, idf: dict) -> str:
 
 _DIR = os.path.dirname(__file__)
 _TAXONOMY_PATH = os.path.join(_DIR, "apqc_taxonomy.json")
-_OVERRIDES_PATH = os.path.join(_DIR, "process_overrides.json")
+# Per-run overrides are scratch, written by reconcile_taxonomy.py under working/.
+# They are NEVER read from the shippable scripts/ folder (that would leak one
+# user's session→process mappings into anyone who runs the packaged skill).
+_OVERRIDES_PATH = "working/process_overrides.json"
 _ROLES_PATH = os.path.join(_DIR, "roles_taxonomy.json")
 _PILLAR_CSS = {"Revenue Growth": "rev", "Cost Reduction": "cost",
                "Risk Mitigation": "risk", "Transformation": "trans"}
@@ -184,10 +188,12 @@ def load_taxonomy() -> tuple:
     return build_index(entries), pillar_lookup, job_lookup
 
 
-def load_overrides() -> dict:
-    """Optional {session_id: process_label} hard overrides."""
-    if os.path.exists(_OVERRIDES_PATH):
-        with open(_OVERRIDES_PATH) as f:
+def load_overrides(path: str = _OVERRIDES_PATH) -> dict:
+    """Optional {session_id: process_label|obj} hard overrides — the per-run
+    scratch file written by reconcile_taxonomy.py under working/ (never inside
+    the shippable scripts/ folder)."""
+    if path and os.path.exists(path):
+        with open(path) as f:
             return json.load(f)
     return {}
 
@@ -325,12 +331,12 @@ def classify_session(s: dict) -> tuple:
 # Main
 # ---------------------------------------------------------------------------
 
-def main(inp: str, out: str) -> None:
+def main(inp: str, out: str, overrides_path: str = _OVERRIDES_PATH) -> None:
     d = json.load(open(inp))
     sessions = d.get("sessions", [])
 
     (vectors, idf), pillar_lookup, job_lookup = load_taxonomy()
-    overrides = load_overrides()
+    overrides = load_overrides(overrides_path)
     roles_tax, roles_default = load_roles_taxonomy()
 
     classified = []
@@ -414,5 +420,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--in", dest="inp", default="working/cowork_raw.json")
     ap.add_argument("--out", default="working/cowork_sessions.json")
+    ap.add_argument("--overrides", default=_OVERRIDES_PATH,
+                    help="per-run overrides scratch file (default working/process_overrides.json)")
     a = ap.parse_args()
-    main(a.inp, a.out)
+    main(a.inp, a.out, a.overrides)

@@ -143,10 +143,44 @@ def session_expert(runs, idx):
     double-count the chain). `runs` is {category: run_count}. idx: 0=low, 1=typical, 2=high."""
     return sum(n * CATS.get(c, CATS["general"])[idx] for c, n in (runs or {}).items())
 
+import os
+COST_LOG = "/mnt/user-config/.claude/cowork-session-costs.json"
+def load_cost_lookup():
+    """Map session id (full UUID and 8-char prefix) -> actual $ cost captured by the
+    statusLine hook. Empty if the log doesn't exist yet (older sessions have no cost)."""
+    try:
+        with open(COST_LOG) as f:
+            d=json.load(f)
+        out={}
+        for k,v in (d.items() if isinstance(d,dict) else []):
+            amt = v.get("total_cost_usd") if isinstance(v,dict) else None
+            if isinstance(amt,(int,float)):
+                out[k]=amt; out[k[:8]]=amt
+        return out
+    except Exception:
+        return {}
+
+CREDITS_LOG = "/mnt/user-config/.claude/cowork-session-credits.json"
+def load_credits_lookup():
+    """Map session id (full + 8-char) -> real AiCredits from /cost readings (durable ledger)."""
+    try:
+        with open(CREDITS_LOG) as f:
+            d=json.load(f)
+        out={}
+        for k,v in (d.get("sessions",{}) or {}).items():
+            amt = v.get("credits") if isinstance(v,dict) else v
+            if isinstance(amt,(int,float)):
+                out[k]=amt; out[k[:8]]=amt
+        return out
+    except Exception:
+        return {}
+
 def main(inp,out):
     d=json.load(open(inp)); meta=d["meta"]; sessions=d["sessions"]
     rate=meta.get("hourly_rate",72)
     win=meta.get("window",{"label":"Window","from":"","to":"","months":1})
+    cost_lookup=load_cost_lookup()
+    credits_lookup=load_credits_lookup()
 
     tasks=[]; goals=[]; afiles=[]; artifacts=[]
     catmin=collections.Counter(); ccount=collections.Counter()
@@ -228,6 +262,8 @@ def main(inp,out):
                       "value_pillar":s.get("value_pillar","Transformation"),
                       "pillar_css":s.get("pillar_css","trans"),
                       "job":s.get("job","Other"),"jtbd":s.get("jtbd",""),
+                      "credits":credits_lookup.get(sid),
+                      "cost_usd":(round(credits_lookup[sid]*0.01,2) if credits_lookup.get(sid) is not None else cost_lookup.get(sid)),
                       "minutes_typical":round(e_t),"hours_typical":hrs(e_t),
                       "categories":sorted({CATS.get(c,CATS["general"])[3] for c in cats}),
                       "n_tasks":int(sum(runs.values())),"artifacts":[_name(a) for a in outputs],
@@ -281,7 +317,7 @@ def main(inp,out):
      "meta":{"user":meta.get("user","User"),"email":meta.get("email",""),
              "generated":meta.get("generated",""),"window":win,
              "methodology":"Cowork Time-Savings Methodology v4 + v5 artifact-scaled speed multiplier",
-             "hourly_rate_default":rate},
+             "hourly_rate_default":rate,"seat_cost_month":0},
      "kpis":{"sessions":len(sessions),"run_tasks":sum(ccount.values()),
              "artifacts":len({art_base(n) for n in afiles}),"active_days":len(active),
              "hours_saved_typical":H_t,"hours_per_active_day":round(H_t/nday,1),
@@ -298,7 +334,8 @@ def main(inp,out):
      "categories":categories,
      "intents":[{"intent":i,"tasks":c} for i,c in icount.most_common()],
      "processes":[{"process":p,"sessions":proc_count[p],"minutes_typical":round(proc_min[p]),
-                   "hours_typical":hrs(proc_min[p]),"value_typical":round(hrs(proc_min[p])*rate)}
+                   "hours_typical":hrs(proc_min[p]),"value_typical":round(hrs(proc_min[p])*rate),
+                   "pct_time":(round(proc_min[p]/exp_t*100) if exp_t else 0)}
                   for p,_ in proc_min.most_common()],
      "roles":[{"role":r,"hours":hrs(mn),"value":round(hrs(mn)*rate)} for r,mn in rmin.most_common()],
      "skills_augmented":skills_aug,

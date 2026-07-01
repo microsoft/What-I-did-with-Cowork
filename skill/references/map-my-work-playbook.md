@@ -101,8 +101,9 @@ to **keep** (your judgment).
 When invoked by `cowork-roi-report`, return — for **each session id** passed in — a compact object
 `{process, pillar, job, jtbd}`, drawn from the tree you derived for *this* user plus the pillar
 crosswalk ([references/value-pillars.md](references/value-pillars.md)). The ROI report writes these
-verbatim into its `process_overrides.json` and renders them as the Job × Pillar bands. Emit only the
-runner's own taxonomy — nothing hard-coded or borrowed from another user.
+verbatim into the per-run scratch file `working/process_overrides.json` (never into any skill's
+`scripts/` folder) and renders them as the Job × Pillar bands. Emit only the runner's own taxonomy —
+nothing hard-coded or borrowed from another user.
 
 ## Output Format
 

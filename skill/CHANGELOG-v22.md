@@ -13,9 +13,9 @@ and skills are all shown, exactly as before. The only change is that credits are
 - **The `/cost` browser sweep (old step 3b).** The skill no longer drives the browser to read
   "N credits used for this task so far", no longer writes the credits ledger, and never prompts you to
   paste/screenshot `/cost`.
-- **No credits / cost line in the report.** The **Credits · cost** column and the Copilot-Credits ROI
-  banner have been **removed from the renderer entirely** (not merely auto-hidden), so this public version
-  carries no credits or cost code at all. Nothing is fabricated.
+- **No credits / cost line in the report.** With no live reading, the **Credits · cost** column and the
+  ROI banner stay hidden (the renderer already auto-hides them when there's no cost data). Nothing is
+  fabricated.
 
 ### What's unchanged (still the full detailed report)
 - Speed multiplier + professional-services value, KPIs, Value-at-a-glance pillar table.
@@ -27,8 +27,5 @@ and skills are all shown, exactly as before. The only change is that credits are
 
 - `SKILL.md` — step 1 back to two questions; the step-3b `/cost` sweep section removed; no credits/cost
   references in the workflow, scheduling, or email steps.
-- `scripts/compute.py` — the credits/cost ledger readers (`load_cost_lookup`, `load_credits_lookup`) and
-  the per-session `credits` / `cost_usd` fields are removed.
-- `scripts/build_report.py` — the **Credits · cost** column and the real-cost ROI banner are removed; the
-  `--anonymize` team-safe mode is untouched and still available.
-- `scripts/statusline_cost.py` — deleted (it only existed to capture per-session credit cost).
+- `scripts/build_report.py` — unchanged renderer (the dormant `--anonymize` team-safe mode remains available
+  but is **not** used by this personal skill).

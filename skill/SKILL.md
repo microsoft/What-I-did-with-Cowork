@@ -131,7 +131,7 @@ deliverables/iterations and label them as estimates. `compute.py` applies `Σ ru
 
 **Use the deterministic classifier — do NOT hand-tag categories.** Write the harvested sessions (with
 `inputs`, `outputs` and `exec_min`) to `working/cowork_raw.json`, then run:
-`python scripts/classify.py --in working/cowork_raw.json --out working/cowork_sessions.json`.
+`python scripts/classify.py --in working/cowork_raw.json --out working/cowork_sessions.json --overrides working/process_overrides.json`.
 It maps each session's real artifact **extensions** to categories (e.g. `.xlsx/.csv`→analysis, `.docx/.pptx/.pdf`→document,
 `.html/.py/.ps1`→code, `.zip`→special), caps ~2 run tasks/session, and tags output-less sessions `general`.
 This is the fix for the failure mode where every session was stamped with the same category pair and every
@@ -194,31 +194,64 @@ controlled vocabulary in `scripts/skills_vocabulary.json` (DOMAIN_SKILLS + TECH_
   `_telemetry.jsonl`) supplies real per-session signals; past OneDrive-only sessions can only be
   tagged by inference, so note that in the report.
 
-### 4b. Drive business process + value pillar (run the bundled map-my-work playbook inline)
+### 4b. Align to the durable taxonomy memory, then derive process + JTBD (registry-first)
 
-This step runs **automatically** as part of the report — no separate skill, no extra install. Follow
-the bundled playbook **[references/map-my-work-playbook.md](references/map-my-work-playbook.md)** to
-derive the **signed-in user's own** Jobs ▸ Business Processes ▸ Workflows from *their* M365 footprint,
-and tag each in-window session with its `process`, `pillar`, `job`, and `jtbd` (pillars via
-[references/value-pillars.md](references/value-pillars.md)). Nothing is hard-coded to any individual.
+**Business Process is the report's aggregation anchor; JTBD and Project nest under it. The standalone
+Job layer has been dropped.** Process and Project NAMES are kept STABLE across runs by a durable
+**taxonomy memory**, so the model does not re-invent names each run.
 
-1. **Derive the taxonomy inline** per the playbook, producing — **per in-window session** —
-   `{process, pillar, job, jtbd}`, personalized to whoever runs the report.
-2. **Write `scripts/process_overrides.json`** as a RICH map *before* running `classify.py`:
-   ```json
-   { "<session_id>": {"process":"…","pillar":"Revenue Growth|Cost Reduction|Risk Mitigation|Transformation","job":"…","jtbd":"…"} }
+**The memory is PER-USER and never shared.** The registry is scoped to the invoking user:
+- Its filename embeds a sanitized key from the user's email —
+  `/mnt/user-config/.claude/cowork-process-registry.<userkey>.json` — and it carries an `owner`
+  field. `/mnt/user-config/.claude/` is the invoking user's own mount and syncs to **their** OneDrive
+  `Documents/Cowork/` folder, so this file lives in the user's Cowork folder and is theirs alone.
+- **`reconcile_taxonomy.py` derives the path and owner from the user's email** (harvested into
+  `working/cowork_raw.json` `meta.email` in step 2; pass it explicitly with `--owner`). It **ignores
+  any registry whose `owner` does not match the invoking user** (a leaked/inherited/unstamped file),
+  so a **first run has no memory** and mints processes from the user's OWN sessions.
+- **Nothing user-specific is ever committed to the skill folder.** The per-run overrides are scratch
+  under `working/`; there is no bundled seed.
+
+1. **Reconcile against the user's own memory — align first, create only if novel.** After writing
+   `working/cowork_raw.json` (step 3) and BEFORE `classify.py`, run (pass the signed-in user's email
+   from step 2 as `--owner`):
    ```
-   `classify.py` uses these values **directly** (live, per-user) — `pillar_css` is derived from the
-   pillar name. A plain-string value (`{"<id>":"Process"}`) is still accepted for back-compat.
-3. The **work-by-business-process table bands by Job × Pillar** (e.g. "&lt;Job&gt; · &lt;Pillar&gt;"),
-   shows the process as a pill, and adds a **JTBD** sub-line per row.
-4. **Fallback (skip 4b):** if the playbook isn't run, `classify.py` classifies against the **generic
-   APQC** business-process taxonomy in `scripts/apqc_taxonomy.json` (Job = "Other", default pillar) —
-   the report still renders, just without the personalized Job/JTBD layer.
+   python scripts/reconcile_taxonomy.py --in working/cowork_raw.json \
+       --owner "<signed-in user's mail>" --overrides working/process_overrides.json
+   ```
+   For each session it: (a) matches the goal to a **known Project** (exact slug or near-identical
+   title) and reuses its `{process, pillar, jtbd}`; else (b) matches the goal to an **existing
+   Process** by keyword similarity and reuses `{process, pillar}` + the process default JTBD,
+   registering a new project under that existing process; else (c) mints a **new Process** (flagged
+   `"new": true`) for genuinely novel work. It writes `working/process_overrides.json` (consumed by
+   `classify.py`) and **persists the owner-stamped registry** to the per-user path above.
+2. **Surface anything new (interactive runs).** If the script prints `NEW processes minted`, tell the
+   user the new name(s) and offer to rename — edit the registry's `processes`/`projects` and re-run
+   `reconcile_taxonomy.py`. On unattended/scheduled runs it auto-creates the flagged entry and never
+   blocks. (On a genuine first run EVERY process is new — that is expected, not an error.)
+3. `classify.py` then reads the overrides via `--overrides working/process_overrides.json` (each
+   session → `{process, pillar, job, jtbd}`; `job` is retained = the process name only for back-compat
+   with the not-yet-migrated member skill — it is **not** shown in this report). Pillars follow
+   [references/value-pillars.md](references/value-pillars.md); the registry stores each process's pillar.
+4. **No-memory fallback:** on a first run (or when the owner guard ignores a non-matching file) the
+   registry starts empty and is built from the processes THIS run discovers; if `reconcile_taxonomy.py`
+   cannot run, `classify.py` falls back to the generic APQC taxonomy in `scripts/apqc_taxonomy.json`.
+   The optional [references/map-my-work-playbook.md](references/map-my-work-playbook.md) can still be
+   used to enrich process/JTBD naming for novel work before it is written to the registry.
 
-The playbook is the single source of truth for process / pillar / job / JTBD naming. The taxonomy is
-**derived at run time for the user who runs the report** — nothing in this skill is specific to any
-individual.
+The report's **Work by business process** section pivots on Process: each process is an accordion with
+its subtotal (**sessions · hours · value · % of time**), the distinct **JTBD(s)** it served, and the
+**projects** beneath it. A secondary **By pillar** toggle groups the same projects by value pillar.
+
+> **Memory-first rule:** a run a week from now must locate the invoking user's own
+> `/mnt/user-config/.claude/cowork-process-registry.<userkey>.json` and align to it; only truly novel
+> work adds a name. `reconcile_taxonomy.py` enforces this deterministically and per-user.
+
+> **Packaging guardrail (privacy):** NEVER bundle the registry, any
+> `cowork-process-registry*.json` (including the per-user file), or a populated
+> `process_overrides.json` when zipping/sharing this skill. Overrides must ship as `{}`. Personal
+> jobs/processes leaking into another user's run is a fatal flaw — the per-user owner guard and the
+> `working/` overrides path exist specifically to prevent it.
 
 ### 5. Compute & render (bundled scripts — no hand arithmetic)
 - `python scripts/compute.py --in working/cowork_sessions.json --out working/cowork_roi_data.json`
@@ -285,11 +318,20 @@ The report also renders an **Analyzed → Produced** breakdown (inputs analyzed 
 - **Conservative counting.** Cap ~2 tasks/session; fold supporting files into the primary task. Prefer credible over impressive.
 - **No hand arithmetic.** All numbers come from `compute.py`.
 - **Privacy.** Show artifact filenames and short goal phrases only — never file contents.
+- **Per-user memory — never leak it.** The taxonomy registry is owner-scoped and owner-stamped;
+  `reconcile_taxonomy.py` ignores any file that isn't the invoking user's. NEVER bundle the registry,
+  any `cowork-process-registry*.json`, or a populated `process_overrides.json` when packaging/sharing
+  the skill — overrides ship as `{}` and live under `working/` at runtime.
 - **Send/automate only on approval.** Show the report first; only schedule or email after the user opts in (Q2).
 - **Fail open.** If the OneDrive Cowork folder is missing/404, note it and ask for the folder name rather than aborting.
 
 ## Bundled files
 - `scripts/mine_session.py` — mines the live session transcript for measured run time, tool intensity and artifacts (telemetry).
-- `scripts/classify.py` — deterministic ext→category classifier; emits the `inputs`/`outputs` schema compute.py consumes.
-- `scripts/compute.py` — applies the research-anchored bands + v5 two-clock speed-multiplier model → payload JSON.
-- `scripts/build_report.py` — renders the single-file HTML report (speed multiplier, Analyzed→Produced, glossary, clickable sources, live rate, PDF).
+- `scripts/reconcile_taxonomy.py` — **per-user taxonomy memory** (align-first, create-if-novel): reads the invoking user's owner-scoped registry (ignoring any file that isn't theirs), aligns each session to an existing Process/Project, mints new only for novel work, writes `working/process_overrides.json` + persists the owner-stamped registry. Runs BEFORE `classify.py`. Takes `--owner`.
+- `scripts/classify.py` — deterministic ext→category classifier; reads the per-run overrides via `--overrides working/process_overrides.json`; emits the schema compute.py consumes.
+- `scripts/compute.py` — applies the research-anchored bands + v5 two-clock speed-multiplier model → payload JSON (Process rollup carries `pct_time`).
+- `scripts/build_report.py` — renders the single-file HTML report. **Work-by-process is Process-anchored** (Process ▸ JTBD ▸ Project; Job layer dropped), plus speed multiplier, Analyzed→Produced, glossary, clickable sources, live rate, PDF.
+
+## Durable files (outside the skill, persist across sessions — PER-USER, never bundled)
+- `/mnt/user-config/.claude/cowork-process-registry.<userkey>.json` — the invoking user's **own** taxonomy memory (canonical Processes + Projects + JTBDs), carrying an `owner` field. `<userkey>` is derived from the user's email; the file lives on the user's per-user mount (syncs to their OneDrive Cowork folder). Read first, aligned to, and persisted by `reconcile_taxonomy.py` every run. Each user has their own file; `reconcile_taxonomy.py` ignores any file whose `owner` isn't the invoking user. The member / aggregated skills use the same per-user, owner-scoped scheme.
+- `/mnt/user-config/.claude/cowork-session-telemetry.json` · `…-credits.json` · `…-session-costs.json` — measured run-time / credit / cost logs (optional inputs).
