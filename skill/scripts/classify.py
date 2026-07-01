@@ -64,8 +64,8 @@ Label overrides
 reconcile_taxonomy.py writes a per-run overrides file to working/process_overrides.json
 (session_id -> process label or {process,pillar,job,jtbd}); pass it via --overrides.
 The classifier checks it first and skips similarity scoring for matched IDs. This file
-is per-run scratch and must NEVER live in the shippable scripts/ folder — that is how a
-prior version leaked one user's session→process mappings to everyone who ran the package.
+is per-run scratch and must NEVER live in the shippable scripts/ folder, so one
+user's session→process mappings stay out of the packaged skill.
 
 Usage: python classify.py --in working/cowork_raw.json --out working/cowork_sessions.json
 """
@@ -164,8 +164,8 @@ def nearest(goal: str, cat_hint: str, vectors: list, idf: dict) -> str:
 _DIR = os.path.dirname(__file__)
 _TAXONOMY_PATH = os.path.join(_DIR, "apqc_taxonomy.json")
 # Per-run overrides are scratch, written by reconcile_taxonomy.py under working/.
-# They are NEVER read from the shippable scripts/ folder (that would leak one
-# user's session→process mappings into anyone who runs the packaged skill).
+# They are NEVER read from the shippable scripts/ folder, so one user's
+# session→process mappings stay out of the packaged skill.
 _OVERRIDES_PATH = "working/process_overrides.json"
 _ROLES_PATH = os.path.join(_DIR, "roles_taxonomy.json")
 _PILLAR_CSS = {"Revenue Growth": "rev", "Cost Reduction": "cost",

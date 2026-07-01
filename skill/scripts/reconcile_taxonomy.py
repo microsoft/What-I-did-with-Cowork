@@ -22,10 +22,10 @@ It then writes the per-run overrides (session_id -> {process, pillar, job, jtbd}
 member skill) to a WORKING path, and PERSISTS the updated registry. Process is the
 stable aggregation anchor; Jobs are no longer a layer in the report.
 
-PER-USER MEMORY (privacy):
+PER-USER MEMORY:
   The registry is scoped to the invoking user. Its filename embeds a sanitized
   key derived from the user's email, and the file carries an "owner" field. A
-  registry whose owner does not match the invoking user (a leaked/inherited/
+  registry whose owner does not match the invoking user (an inherited or
   unstamped file) is IGNORED — the run starts from an empty registry and mints
   processes from the user's OWN sessions. Nothing user-specific is ever written
   into the shippable skill folder: the registry lives under the per-user
@@ -100,7 +100,7 @@ def name_process(goal):
 
 def load_registry(path, owner):
     """Load the invoking user's registry. Any file that is missing an `owner`
-    field or whose owner != the invoking user (leaked/inherited/unstamped) is
+    field or whose owner != the invoking user (inherited/unstamped) is
     IGNORED and treated as a first run — this is what keeps the memory per-user.
     `owner` is expected already lowercased/stripped by the caller."""
     reg = None

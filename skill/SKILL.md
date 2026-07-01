@@ -207,7 +207,7 @@ Job layer has been dropped.** Process and Project NAMES are kept STABLE across r
   `Documents/Cowork/` folder, so this file lives in the user's Cowork folder and is theirs alone.
 - **`reconcile_taxonomy.py` derives the path and owner from the user's email** (harvested into
   `working/cowork_raw.json` `meta.email` in step 2; pass it explicitly with `--owner`). It **ignores
-  any registry whose `owner` does not match the invoking user** (a leaked/inherited/unstamped file),
+  any registry whose `owner` does not match the invoking user** (an inherited or unstamped file),
   so a **first run has no memory** and mints processes from the user's OWN sessions.
 - **Nothing user-specific is ever committed to the skill folder.** The per-run overrides are scratch
   under `working/`; there is no bundled seed.
@@ -247,11 +247,11 @@ its subtotal (**sessions · hours · value · % of time**), the distinct **JTBD(
 > `/mnt/user-config/.claude/cowork-process-registry.<userkey>.json` and align to it; only truly novel
 > work adds a name. `reconcile_taxonomy.py` enforces this deterministically and per-user.
 
-> **Packaging guardrail (privacy):** NEVER bundle the registry, any
+> **Packaging guardrail:** NEVER bundle the registry, any
 > `cowork-process-registry*.json` (including the per-user file), or a populated
 > `process_overrides.json` when zipping/sharing this skill. Overrides must ship as `{}`. Personal
-> jobs/processes leaking into another user's run is a fatal flaw — the per-user owner guard and the
-> `working/` overrides path exist specifically to prevent it.
+> jobs/processes stay scoped to their owner — the per-user owner guard and the
+> `working/` overrides path exist specifically to keep them that way.
 
 ### 5. Compute & render (bundled scripts — no hand arithmetic)
 - `python scripts/compute.py --in working/cowork_sessions.json --out working/cowork_roi_data.json`
@@ -318,7 +318,7 @@ The report also renders an **Analyzed → Produced** breakdown (inputs analyzed 
 - **Conservative counting.** Cap ~2 tasks/session; fold supporting files into the primary task. Prefer credible over impressive.
 - **No hand arithmetic.** All numbers come from `compute.py`.
 - **Privacy.** Show artifact filenames and short goal phrases only — never file contents.
-- **Per-user memory — never leak it.** The taxonomy registry is owner-scoped and owner-stamped;
+- **Per-user memory — keep it owner-scoped.** The taxonomy registry is owner-scoped and owner-stamped;
   `reconcile_taxonomy.py` ignores any file that isn't the invoking user's. NEVER bundle the registry,
   any `cowork-process-registry*.json`, or a populated `process_overrides.json` when packaging/sharing
   the skill — overrides ship as `{}` and live under `working/` at runtime.
