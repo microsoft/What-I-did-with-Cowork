@@ -6,7 +6,7 @@ Generic + skill-friendly: pass any payload produced by build_data.py.
 
 Usage: python build_report.py --data working/cowork_roi_data.json --out output/cowork-roi-report.html
 """
-import json, argparse, html
+import json, argparse, html, collections
 
 # ---- Methodology glossary: per-category research anchors (from the v4 deck) ----
 CAT_SOURCES = {
@@ -162,6 +162,58 @@ def build(data, out_path, anon=False):
         role_rows+=(f'<div class="role-row"><div class="role-name">{_rolelink(r["role"])}</div>'
                     f'<div class="role-val"><b>{r["hours"]}h</b> · '
                     f'<span class="g-v" data-hours="{r["hours"]}">${r["value"]:,}</span></div></div>')
+
+    # ----- Projects x Roles heatmap - PROJECTS on the Y axis (rows; can grow to dozens over a
+    #       long window and scroll), ROLES on the X axis capped at top-N (+ "Other"). Each
+    #       project's expert-minutes are split evenly across the roles it needed. -----
+    RP_TOP_N=7
+    rp_projects=sorted([g for g in goals if g.get("minutes_typical",0)>0],
+                       key=lambda g:-g["minutes_typical"])
+    rp_rolemin=collections.Counter(); rp_cells={}
+    for g in rp_projects:
+        prs=[x for x in (g.get("professional_roles") or []) if x] or ["Knowledge Worker"]
+        share=g["minutes_typical"]/len(prs)
+        for rn in prs:
+            rp_rolemin[rn]+=share; rp_cells[(g["session"],rn)]=rp_cells.get((g["session"],rn),0)+share
+    rp_ranked=[rn for rn,_ in rp_rolemin.most_common()]
+    rp_toproles=rp_ranked[:RP_TOP_N]; rp_rest=rp_ranked[RP_TOP_N:]
+    rp_cols=rp_toproles+(["Other"] if rp_rest else [])
+    for (sid,rn),v in list(rp_cells.items()):
+        if rn in rp_rest:
+            rp_cells[(sid,"Other")]=rp_cells.get((sid,"Other"),0)+v; del rp_cells[(sid,rn)]
+    rp_colmin={rn:(rp_rolemin[rn] if rn!="Other" else sum(rp_rolemin[x] for x in rp_rest)) for rn in rp_cols}
+    rp_maxcell=(max(rp_cells.values())/60.0) if rp_cells else 1.0
+    heatmap_html=""
+    if rp_projects and rp_cols:
+        def _shade(hh):
+            if hh<=0: return ("#F7F7F7","#BBB")
+            t=(hh/rp_maxcell) if rp_maxcell else 0
+            a=0.12+0.88*min(t,1.0)
+            return ("rgba(15,108,189,%.2f)"%a, "#fff" if t>0.45 else "#0B3D66")
+        th="".join('<th class="rp-rolecol"><span>%s</span></th>'%esc(rn) for rn in rp_cols)
+        head='<tr><th class="rp-rc">Project \\ Role</th>%s<th class="rp-tot">Total</th></tr>'%th
+        bodyr=""
+        for g in rp_projects:
+            cb=' <span class="rp-conv">chat-only</span>' if g.get("conversational") else ""
+            tds=""
+            for rn in rp_cols:
+                hh=rp_cells.get((g["session"],rn),0)/60.0
+                bg,fg=_shade(hh)
+                txt=("%.1f"%hh) if hh>=0.05 else ""
+                tds+='<td class="rp-hc" style="background:%s;color:%s" title="%s: %.2fh">%s</td>'%(bg,fg,esc(g["title"]+" - "+rn),hh,txt)
+            pt=g["hours_typical"]; _rpval=round(pt*rate)
+            bodyr+=('<tr><td class="rp-pl"><span class="rp-pt">%s</span>%s<span class="rp-pp">%s</span></td>%s'
+                    '<td class="rp-tot">%.1fh<span class="v" data-hours="%.2f">$%s</span></td></tr>'
+                    )%(esc(g["title"]),cb,esc(g.get("process","")),tds,pt,pt,format(_rpval,","))
+        ctds="".join('<td class="rp-ct">%.1fh</td>'%(rp_colmin[rn]/60.0) for rn in rp_cols)
+        gtot=sum(rp_colmin.values())/60.0
+        bodyr+='<tr class="rp-ctr"><td class="rp-pl">Role total</td>%s<td class="rp-tot">%.1fh</td></tr>'%(ctds,gtot)
+        other_note=(" &nbsp;\u00b7&nbsp; <b>Other</b> = "+", ".join(esc(x) for x in rp_rest)) if rp_rest else ""
+        heatmap_html=('<div class="rp-wrap"><table class="rp-tbl"><thead>%s</thead><tbody>%s</tbody></table></div>'%(head,bodyr)
+                      +'<div class="rp-legend"><span>Less</span><div class="rp-scale">'
+                      +'<i style="background:rgba(15,108,189,.12)"></i><i style="background:rgba(15,108,189,.35)"></i>'
+                      +'<i style="background:rgba(15,108,189,.6)"></i><i style="background:rgba(15,108,189,.85)"></i>'
+                      +'<i style="background:rgba(15,108,189,1)"></i></div><span>More hours (per cell)'+other_note+'</span></div>')
 
     # ----- deliverables -> skills -> hours table — each artifact, the skills that built it,
     #       and the expert-equivalent hours attributed to it -----
@@ -618,6 +670,25 @@ a{{color:var(--blue)}}
 .role-row:first-child{{border-top:none}}
 .role-name{{font-size:14px;font-weight:600;color:var(--ink)}}
 .role-val{{font-size:13px;color:var(--mut);white-space:nowrap}}
+/* Projects x Roles heatmap - projects on Y (scrollable), roles on X (top-N + Other) */
+.rp-wrap{{max-height:560px;overflow:auto;border:1px solid var(--line);border-radius:12px}}
+.rp-tbl{{border-collapse:separate;border-spacing:3px;width:100%;font-size:12.5px;padding:4px}}
+.rp-tbl thead th{{position:sticky;top:0;background:#fff;z-index:2;padding:6px 4px 8px;vertical-align:bottom}}
+.rp-rc{{text-align:left;color:var(--mut);font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;left:0;z-index:3}}
+.rp-rolecol{{width:74px;font-weight:600}}
+.rp-rolecol span{{display:block;font-size:10.5px;line-height:1.2;color:#3B3A39}}
+.rp-pl{{text-align:left;white-space:nowrap;padding-right:10px;position:sticky;left:0;background:#fff;z-index:1}}
+.rp-pt{{display:block;font-weight:600;font-size:12.5px;color:var(--ink)}}
+.rp-pp{{display:block;font-size:10.5px;color:var(--mut)}}
+.rp-conv{{display:inline-block;background:#EFF6FC;color:var(--blue);border:1px solid #CFE4F7;border-radius:10px;padding:0 6px;font-size:9.5px;font-weight:700;margin-left:4px}}
+.rp-hc{{width:74px;height:40px;text-align:center;border-radius:6px;font-weight:700;font-size:12.5px}}
+.rp-tot,.rp-ct{{text-align:right;white-space:nowrap;font-weight:700;padding-left:8px}}
+.rp-tot .v{{display:block;font-size:10px;color:var(--mut);font-weight:600}}
+.rp-ct{{text-align:center;color:var(--mut);font-size:11px;padding-top:8px}}
+.rp-ctr td.rp-pl{{color:var(--mut);font-weight:600;font-size:11px}}
+.rp-legend{{display:flex;align-items:center;gap:9px;margin-top:12px;font-size:11.5px;color:var(--mut)}}
+.rp-scale{{display:flex;height:11px;width:170px;border-radius:6px;overflow:hidden;border:1px solid var(--line)}}
+.rp-scale i{{flex:1}}
 .dl-filter{{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-bottom:16px}}
 .dl-filter-l{{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--mut);margin-right:4px}}
 .dl-chip{{border:1px solid #CFCFCF;background:#fff;border-radius:14px;padding:3px 11px;font-size:12px;font-weight:600;cursor:pointer;color:var(--mut)}}
@@ -753,6 +824,10 @@ html{{scroll-behavior:smooth}}
   <h2><span class="sec">🧑‍💼</span> Roles Cowork assembled for me</h2>
   <p class="lead">The professional roles Cowork stood in for — the specialist hats it wore so the work got done without added headcount, with the expert-equivalent hours it covered in each. This is where time saved becomes <b>capability</b>: specialist roles assembled on demand, directly in your workflow.</p>
   <div class="card role-list">{role_rows}</div>
+
+  <h2><span class="sec">🗺️</span> Roles × projects heatmap</h2>
+  <p class="lead">Which specialist role went into which project. <b>Projects run down the side</b> (most hours first) and <b>roles across the top</b> (top {RP_TOP_N} by hours; the rest fold into <b>Other</b>). Each project's expert-equivalent hours are split evenly across the roles it needed, so a darker cell = more of that role in that project.</p>
+  <div class="card">{heatmap_html}</div>
 
 
 

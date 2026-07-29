@@ -173,8 +173,9 @@ its subtotal (**sessions · hours · value · % of time**), the distinct **JTBD(
 **projects** beneath it. A secondary **By pillar** toggle groups the same projects by value pillar.
 **(v25 layout:** primary lens, rendered directly **under the KPI cards** in a quiet panel (single-caret
 rows, whole row clickable). A companion **Projects by category** section folds the same projects into a
-collapsible bucket per category; the former task-category and Roles **bar charts are removed** (replaced by
-the fold + a clean role list).**)**
+collapsible bucket per category; the former task-category and Roles **bar charts are removed** (fold + clean role
+list). A **Projects × Roles heatmap** follows the Roles list — projects on Y (scrollable), roles on X
+capped at top-7 (+ Other); each cell = that role's expert-hours in that project.**)**
 
 > **Memory-first + packaging:** each run locates the user's own owner-scoped registry and aligns to it (only
 > novel work adds a name). NEVER bundle the registry, any `cowork-process-registry*.json`, or a populated
@@ -187,22 +188,22 @@ the fold + a clean role list).**)**
 - Verify: `Glob output/cowork-roi-report.html`. If missing, locate and move into `output/`.
 - **Run each pipeline script as its own command** — never append an inline schema-guessing `python -c`; a wrong
   guess exits non-zero and marks the whole step Failed even when the script succeeded. Trust each script's printed
-  summary; inspect output with a separate defensive read. (`compute.py` holds the bands; `build_report.py` renders.)
+  summary; inspect output with a separate defensive read.
 
 ### 6. Show highlights & verify
-Present a short highlights summary (or a `render_ui` card): speed multiplier, expert-equivalent hours,
-professional-services value, top 3 categories and top goals. Tell the user the report is saved to their files.
+Present a short highlights summary (or `render_ui` card): speed multiplier, expert-equivalent hours,
+value, top 3 categories and goals. Tell the user the report is saved to their files.
 
 ### 7. Automate (only if the user chose it in Q2)
 `SetupScheduledPrompt` with `execution_mode="inline"`, frequency **Day**, **interval = N** (7/15/30), hours
-`["8"]`, name "Cowork ROI report (every N days)", and a **self-contained** description that restates the full
-workflow (harvest my Cowork sessions for the last N days → classify → two-clock model at $72/hr → render HTML
-to output/ → email me the highlights with the HTML attached). Confirm: "Done — I'll rebuild every N days and email the digest."
+`["8"]`, name "Cowork ROI report (every N days)", and a **self-contained** description restating the full
+workflow (harvest last N days → classify → two-clock model at $72/hr → render HTML to output/ → email me the
+highlights with the HTML attached). Confirm: "Done — I'll rebuild every N days and email the digest."
 
 ### 8. Email digest (if automating, or if asked to email it)
 `SendEmailWithAttachments(to=[<user's own email>], subject="My Copilot Cowork impact — <window label>",
-body="<highlights as HTML>", content_type="HTML", direct_attachment_file_paths=["output/cowork-roi-report.html"])`.
-Send to a different recipient only if the user explicitly names one.
+body="<highlights HTML>", content_type="HTML", direct_attachment_file_paths=["output/cowork-roi-report.html"])`.
+Other recipient only if named.
 
 ---
 

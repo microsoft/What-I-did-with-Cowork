@@ -268,6 +268,7 @@ def main(inp,out):
                       "categories":sorted({CATS.get(c,CATS["general"])[3] for c in cats}),
                       "n_tasks":int(sum(runs.values())),"artifacts":[_name(a) for a in outputs],
                       "speed_x":spd,"exec_min":assist,
+                      "professional_roles":prof_roles,
                       "conversational":(len(outputs)==0)})
         if not outputs: conv+=1
 

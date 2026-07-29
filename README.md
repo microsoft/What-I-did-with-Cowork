@@ -25,8 +25,8 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 
 | Version | File | Status |
 |---|---|---|
-| **v26** | [`cowork-roi-report-skill-v26.zip`](cowork-roi-report-skill-v26.zip) | ✅ **Latest version** — recommended |
-| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v24) |
+| **v27** | [`cowork-roi-report-skill-v27.zip`](cowork-roi-report-skill-v27.zip) | ✅ **Latest version** — recommended |
+| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v26) |
 
 ---
 
@@ -70,7 +70,7 @@ Your projects, seen two ways — by the **JTBD** they served within their **Busi
 
 ### Option 1 — Let Cowork install it for you (easiest)
 
-1. **Download** the latest version: [`cowork-roi-report-skill-v26.zip`](cowork-roi-report-skill-v26.zip) *(no need to unzip — attach it as-is)*
+1. **Download** the latest version: [`cowork-roi-report-skill-v27.zip`](cowork-roi-report-skill-v27.zip) *(no need to unzip — attach it as-is)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session
 3. **Click the ➕ (plus) symbol** to attach the zip file, then send:
 
@@ -81,7 +81,7 @@ Your projects, seen two ways — by the **JTBD** they served within their **Busi
 
 ### Option 2 — Manual install
 
-1. **Download** the latest version: [`cowork-roi-report-skill-v26.zip`](cowork-roi-report-skill-v26.zip)
+1. **Download** the latest version: [`cowork-roi-report-skill-v27.zip`](cowork-roi-report-skill-v27.zip)
 2. **Extract** the zip
 3. **Copy** the `cowork-roi-report/` folder to your Cowork skills directory:
    ```
@@ -148,7 +148,8 @@ Sources: Stanford-WB, Microsoft Research, NBER, Forrester — all clickable in t
 cowork-roi-report/
 ├── SKILL.md                     # skill definition + workflow (loaded by Cowork)
 ├── README.md                    # technical documentation
-├── CHANGELOG-v26.md             # latest — packaging/size fix so the skill passes plug-in validation
+├── CHANGELOG-v27.md             # latest — Projects × Roles heatmap
+├── CHANGELOG-v26.md             # packaging/size fix so the skill passes plug-in validation
 ├── CHANGELOG-v25.md             # tighter classifier + cleaner report layout
 ├── CHANGELOG-v5…v24.md          # full version history
 ├── scripts/
@@ -197,6 +198,7 @@ python scripts/build_report.py --data working/cowork_roi_data.json --out output/
 
 ## What's new
 
+- **v27** — adds a **Projects × Roles heatmap** to the report (right after the "Roles Cowork assembled" list), with cells that reconcile to the existing roles and project totals. No change to the methodology, categories, bands, or value model. See [`skill/CHANGELOG-v27.md`](skill/CHANGELOG-v27.md).
 - **v26** — a small packaging fix so the skill passes plug-in validation (trimmed `SKILL.md` and its frontmatter under the size limits, with the deeper methodology and classification detail moved into `references/`). No change to the pipeline, categories, bands, or report output. See [`skill/CHANGELOG-v26.md`](skill/CHANGELOG-v26.md).
 - **v25** — a tighter classifier and a cleaner, more legible report layout. See [`skill/CHANGELOG-v25.md`](skill/CHANGELOG-v25.md).
 
