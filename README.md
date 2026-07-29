@@ -25,18 +25,8 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 
 | Version | File | Status |
 |---|---|---|
-| **v24** | [`cowork-roi-report-skill-v24.zip`](cowork-roi-report-skill-v24.zip) | ✅ **Latest version** — recommended |
-| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v23) |
-
-### What's new in v24
-
-v24 makes the **durable taxonomy memory per-user and owner-scoped**, so each person's process and project names come from — and stay with — their own work:
-
-- **Owner-scoped, per-user registry.** The taxonomy registry now lives on the user's own mount (syncing to **their** OneDrive `Documents/Cowork/` folder) under an owner-stamped, per-user filename derived from their email.
-- **Identity guard.** `reconcile_taxonomy.py` only uses a registry whose `owner` matches the invoking user; otherwise it starts fresh and mints processes from that user's own sessions. A new `--owner` argument (falling back to the harvested `meta.email`) keeps the registry scoped.
-- **Per-run scratch stays out of the bundle.** Overrides are written to `working/process_overrides.json` and read from there; the shipped `scripts/process_overrides.json` ships empty (`{}`) and no registry seed is bundled — a first run starts clean.
-
-Everything else is unchanged from v23: the process-anchored **Process ▸ JTBD ▸ Project** taxonomy, the artifact-scaled two-clock methodology, KPIs, the four-pillar **Value at a glance** table, **Where the time went** by task category, **Roles Cowork assembled**, **Deliverables & the skills behind them**, the activity heatmap, and the methodology glossary with clickable sources. Numbers still come only from `compute.py`. See [`skill/CHANGELOG-v24.md`](skill/CHANGELOG-v24.md) for full details.
+| **v26** | [`cowork-roi-report-skill-v26.zip`](cowork-roi-report-skill-v26.zip) | ✅ **Latest version** — recommended |
+| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v24) |
 
 ---
 
@@ -80,7 +70,7 @@ Your projects, seen two ways — by the **JTBD** they served within their **Busi
 
 ### Option 1 — Let Cowork install it for you (easiest)
 
-1. **Download** the latest version: [`cowork-roi-report-skill-v24.zip`](cowork-roi-report-skill-v24.zip) *(no need to unzip — attach it as-is)*
+1. **Download** the latest version: [`cowork-roi-report-skill-v26.zip`](cowork-roi-report-skill-v26.zip) *(no need to unzip — attach it as-is)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session
 3. **Click the ➕ (plus) symbol** to attach the zip file, then send:
 
@@ -91,7 +81,7 @@ Your projects, seen two ways — by the **JTBD** they served within their **Busi
 
 ### Option 2 — Manual install
 
-1. **Download** the latest version: [`cowork-roi-report-skill-v24.zip`](cowork-roi-report-skill-v24.zip)
+1. **Download** the latest version: [`cowork-roi-report-skill-v26.zip`](cowork-roi-report-skill-v26.zip)
 2. **Extract** the zip
 3. **Copy** the `cowork-roi-report/` folder to your Cowork skills directory:
    ```
@@ -158,9 +148,9 @@ Sources: Stanford-WB, Microsoft Research, NBER, Forrester — all clickable in t
 cowork-roi-report/
 ├── SKILL.md                     # skill definition + workflow (loaded by Cowork)
 ├── README.md                    # technical documentation
-├── CHANGELOG-v24.md             # latest — per-user, owner-scoped taxonomy memory
-├── CHANGELOG-v23.md             # Process-anchored taxonomy + durable taxonomy memory
-├── CHANGELOG-v5…v22.md          # full version history
+├── CHANGELOG-v26.md             # latest — packaging/size fix so the skill passes plug-in validation
+├── CHANGELOG-v25.md             # tighter classifier + cleaner report layout
+├── CHANGELOG-v5…v24.md          # full version history
 ├── scripts/
 │   ├── reconcile_taxonomy.py    # align-first/create-if-novel; owner-scoped registry; runs before classify.py
 │   ├── classify.py              # deterministic ext→category classifier
@@ -175,6 +165,8 @@ cowork-roi-report/
 │   └── process_overrides.example.json  # example override map
 ├── references/
 │   ├── map-my-work-playbook.md  # derives your own Processes ▸ JTBDs ▸ Projects (run inline)
+│   ├── methodology.md           # detailed bands table + two-clock formulas
+│   ├── classification-reference.md  # extension/category heuristics + raw-harvest schema
 │   └── value-pillars.md         # the four-pillar crosswalk
 └── examples/
     └── sample_sessions.json     # synthetic input (safe to share)
@@ -200,6 +192,15 @@ python scripts/build_report.py --data working/cowork_roi_data.json --out output/
 - Categories with **no tasks** in the window are reported as **zero**, keeping totals a conservative floor.
 - Counting stays conservative: supporting files are folded into the primary task.
 - Everything is **derived per user at run time** — nothing in the skill is specific to any individual.
+
+---
+
+## What's new
+
+- **v26** — a small packaging fix so the skill passes plug-in validation (trimmed `SKILL.md` and its frontmatter under the size limits, with the deeper methodology and classification detail moved into `references/`). No change to the pipeline, categories, bands, or report output. See [`skill/CHANGELOG-v26.md`](skill/CHANGELOG-v26.md).
+- **v25** — a tighter classifier and a cleaner, more legible report layout. See [`skill/CHANGELOG-v25.md`](skill/CHANGELOG-v25.md).
+
+Full version history lives in [`skill/`](skill) and [`archive/`](archive).
 
 ---
 

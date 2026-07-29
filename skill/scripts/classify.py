@@ -64,8 +64,8 @@ Label overrides
 reconcile_taxonomy.py writes a per-run overrides file to working/process_overrides.json
 (session_id -> process label or {process,pillar,job,jtbd}); pass it via --overrides.
 The classifier checks it first and skips similarity scoring for matched IDs. This file
-is per-run scratch and must NEVER live in the shippable scripts/ folder, so one
-user's session→process mappings stay out of the packaged skill.
+is per-run scratch and must NEVER live in the shippable scripts/ folder — that is how a
+prior version leaked one user's session→process mappings to everyone who ran the package.
 
 Usage: python classify.py --in working/cowork_raw.json --out working/cowork_sessions.json
 """
@@ -164,8 +164,8 @@ def nearest(goal: str, cat_hint: str, vectors: list, idf: dict) -> str:
 _DIR = os.path.dirname(__file__)
 _TAXONOMY_PATH = os.path.join(_DIR, "apqc_taxonomy.json")
 # Per-run overrides are scratch, written by reconcile_taxonomy.py under working/.
-# They are NEVER read from the shippable scripts/ folder, so one user's
-# session→process mappings stay out of the packaged skill.
+# They are NEVER read from the shippable scripts/ folder (that would leak one
+# user's session→process mappings into anyone who runs the packaged skill).
 _OVERRIDES_PATH = "working/process_overrides.json"
 _ROLES_PATH = os.path.join(_DIR, "roles_taxonomy.json")
 _PILLAR_CSS = {"Revenue Growth": "rev", "Cost Reduction": "cost",
@@ -224,11 +224,24 @@ EXT2CAT = {
 
 PRIORITY = ["code", "analysis", "special", "document", "comms", "meeting", "email", "general"]
 
+# ---------------------------------------------------------------------------
+# Goal-text signal vocabulary — enriched from the Cowork usage taxonomy table
+# (Description/Examples column). Each set below deliberately mirrors one row of
+# that table so goal phrasing alone can place a session even when no telltale
+# file extension was saved. Categories are UNCHANGED (still the 8 methodology
+# keys); only the descriptive vocabulary that routes into them is tightened.
+# ---------------------------------------------------------------------------
+
+# Analysis, research & briefing — "searching org data, synthesizing findings,
+# comparing options, explaining concepts, preparing briefings from multiple sources"
 ANALYSIS_SIGNALS = (
     "analyz", "analyse", "analysis", "research", "synthes", "investigat",
     "benchmark", "compar", "evaluat", "assess", "audit", "deep dive", "diagnos",
     "forecast", "roi", "business case", "cost analysis", "quantif", "calculat",
     "insight", "trend",
+    # taxonomy-derived additions:
+    "briefing", "brief on", "search", "org data", "explain", "explaining",
+    "concept", "option", "findings", "multiple source", "compile", "summariz",
 )
 REVIEW_VERBS = ("review", "read", "examine", "look at", "go through", "study")
 SOURCE_PREPS = ("from", "based on", "using", "out of", "off of", "against")
@@ -236,13 +249,67 @@ ANALYTICAL_OBJECTS = (
     "report", "data", "dataset", "findings", "result", "dashboard", "metric",
     "number", "log", "telemetry", "usage", "spreadsheet", "chart", "figure", "source",
 )
+# Code assistance — "writing/debugging code, code review, script generation, code analysis"
 CODE_SIGNALS = (
     "debug", "refactor", " script", "parser", " api", " app ", "application",
-    "automation", "pipeline", "deploy", "integrat", "function", " bug ", "codebase",
+    "pipeline", "deploy", "integrat", "function", " bug ", "codebase",
+    # taxonomy-derived additions:
+    "code review", "script generation", "write code", "writing code",
+    "code analysis", "coding",
 )
-EMAIL_SIGNALS = ("email", "inbox", "reply", "e-mail")
-MEETING_SIGNALS = ("meeting", "transcript", "recap", "standup", "minutes", "agenda")
+# Email side of "Email & communication" — "drafting/replying to emails,
+# summarizing threads, triaging inbox"
+EMAIL_SIGNALS = (
+    "email", "inbox", "reply", "replying", "e-mail",
+    "triage", "triaging", "thread", "draft email", "drafting email",
+)
+# Communication side of "Email & communication" — "managing Teams messages,
+# communication rules"
+COMMS_SIGNALS = (
+    "teams message", "teams chat", "teams channel", "chat message",
+    "post to teams", "communication rule", "notify the team", "announcement",
+)
+# Document & content creation — "drafting docs/presentations, editing text,
+# creating visuals, organizing files in OneDrive/SharePoint"
+DOC_SIGNALS = (
+    "presentation", "deck", "slide", "one-pager", "write-up", "writeup",
+    "draft a doc", "drafting doc", "editing text", "edit text", "visual",
+    "onedrive", "sharepoint", "organize file", "content creation", "newsletter",
+)
+# Workflow automation — "scheduling calendar events, managing task lists,
+# multi-step M365 workflows, recurring prompts; connectors: Dynamics 365,
+# ADO Boards, Power BI, Fabric, ServiceNow, Salesforce, SAP"
+SPECIAL_SIGNALS = (
+    "workflow automation", "automat", "recurring prompt", "scheduled prompt",
+    "schedule prompt", "task list", "multi-step", "multistep", "connector",
+    "dynamics 365", "ado boards", "power bi", "fabric", "servicenow",
+    "salesforce", " sap ", "schedule calendar", "scheduling calendar",
+    "calendar event", "package", "bundle", "skill",
+)
+# Meeting intelligence — "preparing meeting briefings, recapping transcripts,
+# extracting action items, calendar lookups"
+MEETING_SIGNALS = (
+    "meeting", "transcript", "recap", "standup", "minutes", "agenda",
+    "action item", "calendar lookup", "meeting brief",
+)
+# General assistance & learning — kept as the low-priority fallback
+# ("product guidance, discovering capabilities, troubleshooting, learning, Q&A").
 DATA_EXT = {"xlsx", "xlsm", "xls", "csv", "tsv", "json", "parquet"}
+
+# Genuine "content" deliverables — the forms that legitimately mean
+# "Document & content creation" ONLY when one of them is a PRIMARY OUTPUT:
+# a PowerPoint, a Word/PDF document, a Loop/OneNote page, or an image.
+# Note: .md/.txt are deliberately EXCLUDED — a Markdown/plain-text file is just
+# as often an automation byproduct (execution log, README, notes) as authored
+# content, so it must not by itself put a session in the Document category.
+# The `document` tag survives only if a session actually PRODUCED one of these.
+CONTENT_EXT = {
+    "pptx", "ppt",                                   # PowerPoint
+    "docx", "doc", "pdf", "rtf", "odt",              # documents
+    "loop", "one", "onetoc2",                        # Loop / OneNote
+    "png", "jpg", "jpeg", "gif", "svg", "eps",       # images
+    "webp", "heic", "bmp", "tif", "tiff",
+}
 
 
 def ext_of(name: str) -> str:
@@ -280,6 +347,12 @@ def goal_categories(goal: str) -> list:
         cats.append("analysis")
     if any(v in g for v in CODE_SIGNALS):
         cats.append("code")
+    if any(v in g for v in SPECIAL_SIGNALS):
+        cats.append("special")
+    if any(v in g for v in DOC_SIGNALS):
+        cats.append("document")
+    if any(v in g for v in COMMS_SIGNALS):
+        cats.append("comms")
     if any(v in g for v in EMAIL_SIGNALS):
         cats.append("email")
     if any(v in g for v in MEETING_SIGNALS):
@@ -321,6 +394,12 @@ def classify_session(s: dict) -> tuple:
             cats.append(c)
     if (any(a["ext"] in DATA_EXT for a in inputs) or len(inputs) >= 3) and "analysis" not in cats:
         cats.append("analysis")
+    # Primary-output gate for Document & content creation: keep `document` ONLY
+    # when a genuine content artifact (deck / doc / PDF / Loop / image) was
+    # actually PRODUCED. This stops an incidental .md/.txt log — or a chat-only
+    # session with no saved deliverable — from landing in the Document bucket.
+    if "document" in cats and not any(a["ext"] in CONTENT_EXT for a in outputs):
+        cats.remove("document")
     if not cats:
         return (["general"], "conversational (no saved artifact)")
     cats.sort(key=lambda c: PRIORITY.index(c) if c in PRIORITY else 99)

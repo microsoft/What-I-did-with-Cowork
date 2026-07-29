@@ -1,0 +1,54 @@
+{
+  "description": "Generates a Microsoft-branded \"What Cowork Did for Me\" web-app impact report (single self-contained HTML) from the signed-in user's own Copilot Cowork session history in OneDrive. Quantifies leverage as a speed multiplier and a professional-services-equivalent value using research-anchored task-category bands plus an artifact-scaled two-clock model. The report has a live hourly-rate control, a Download-PDF button, an expandable Glossary with clickable research sources, KPIs, a category breakdown, an analyzed-vs-produced (inputs/outputs) breakdown, skills-augmented, work-by-business-process table, and an activity heatmap. Inspired by microsoft/What-I-Did-Copilot, adapted for Copilot Cowork. Use when the user asks to \"generate my impact summary report\", \"generate my impact report\", \"my impact summary\", for \"my Cowork ROI\", \"what Cowork did for me\", \"Cowork impact report\", \"Copilot Cowork ROI report\", \"how much time has Cowork saved me\", \"my Cowork value report\", or any request for a personal impact / ROI / value report on Copilot Cowork usage. The skill asks which period to measure (7, 15 or 30 days) and whether to automate it on that cadence with an emailed digest (highlights + the HTML attached). Do NOT use for: GitHub Copilot / IDE reports, team-wide announcements, single-meeting summaries, or daily briefings.",
+  "dimension_notes": {
+    "instruction_specificity": [
+      "75 workflow line(s)",
+      "has Quick Start / example block",
+      "names tools / data sources",
+      "specifies output format"
+    ],
+    "robustness": [
+      "has Guardrails section",
+      "18 guardrail-style rule(s)",
+      "handles missing-data / failure"
+    ],
+    "scope_boundaries": [
+      "has 'When NOT to Use' section",
+      "description states exclusions",
+      "focused single-domain scope"
+    ],
+    "trigger_clarity": [
+      "10 explicit trigger phrase(s)",
+      "has exclusion clause"
+    ]
+  },
+  "dimensions": {
+    "instruction_specificity": 25,
+    "robustness": 23,
+    "scope_boundaries": 23,
+    "trigger_clarity": 25
+  },
+  "faithfulness": {
+    "detail": "instructs grounding / no-fabrication",
+    "status": "PASS"
+  },
+  "grade": "Excellent",
+  "improvements": [],
+  "mvb_pass": true,
+  "mvb_threshold": 80,
+  "path": "/mnt/user-config/.claude/skills/cowork-roi-report/SKILL.md",
+  "risk": {
+    "factors": [
+      "takes actions (autonomy / blast radius)",
+      "regulated domain"
+    ],
+    "launch_floor": 80,
+    "requires_behavioral": true,
+    "requires_human_review": true,
+    "tier": "high"
+  },
+  "safety": [],
+  "skill_name": "cowork-roi-report",
+  "timestamp": "2026-06-24 21:33 UTC",
+  "total": 96
+}

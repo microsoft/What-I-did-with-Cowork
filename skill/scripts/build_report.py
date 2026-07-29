@@ -112,21 +112,56 @@ def build(data, out_path, anon=False):
         </div>"""
 
 
+    # ----- Projects folded by task category — one collapsible bucket per category,
+    #       listing the projects that fall in it. Replaces the category bar chart:
+    #       the header carries the authoritative per-category hours/value; the body
+    #       lists the projects. A project can appear in up to two buckets (a session
+    #       is capped at 2 categories), so buckets are a lens on the SAME projects. -----
+    CAT_ACCENT={
+        "Analysis & Research":"#0F6CBD","Specialized workflows":"#823BBD",
+        "Document & content creation":"#107C41","Write or debug code":"#0B5394",
+        "Email workflows":"#C19C00","Meeting workflows":"#2899F5",
+        "Communication workflows":"#50AAE8","General assistance / Other":"#8A8886",
+    }
+    catproj={}
+    for g in goals:
+        for lbl in (g.get("categories") or []):
+            catproj.setdefault(lbl,[]).append(g)
+    cat_fold=""
+    for c in sorted(cats,key=lambda x:-x.get("hours_typical",0)):
+        lbl=c["label"]; projs=sorted(catproj.get(lbl,[]),key=lambda x:-x.get("hours_typical",0))
+        acc=CAT_ACCENT.get(lbl,"#0F6CBD")
+        rows=""
+        for g in projs:
+            cb=' <span class="pill conv">chat-only</span>' if g.get("conversational") else ""
+            rows+=(f'<div class="catp-row"><div class="catp-t">{esc(g["title"])}{cb}'
+                   f'<div class="catp-proc">{esc(g.get("process","—"))}</div></div>'
+                   f'<div class="catp-h">{g.get("hours_typical",0):.1f}h</div></div>')
+        if not rows:
+            rows='<div class="catp-empty">No saved projects in this category this period.</div>'
+        cat_fold+=(f'<details class="wbp-acc catp-acc" style="border-left:3px solid {acc}"><summary class="catp-h-sum">'
+                   f'<span class="catp-dot" style="background:{acc}"></span>'
+                   f'<span class="wbp-acc-t">{esc(lbl)}</span>'
+                   f'<span class="wbp-acc-meta">{len(projs)} project{"s" if len(projs)!=1 else ""}</span>'
+                   f'<span class="wbp-h">{c.get("hours_typical",0)}h · '
+                   f'<span class="g-v" data-hours="{c.get("hours_typical",0)}">${c.get("value_typical",0):,}</span></span>'
+                   f'<span class="wbp-caret">▸</span></summary>'
+                   f'<div class="wbp-acc-body catp-body">{rows}</div></details>')
+
     # ----- Roles Cowork assembled for you — the professional roles a billing firm would charge for
     #       this work (from each session's professional_roles; logic ported from
-    #       microsoft/What-I-Did-Copilot). ≥0.2h to match the value-at-a-glance count. -----
+    #       microsoft/What-I-Did-Copilot). ≥0.2h to match the value-at-a-glance count.
+    #       Rendered as a clean inline list (no bar chart) to reduce visual density. -----
     def _rolelink(name):
         q=name.replace('&','%26').replace('/','%2F').replace(' ','+')
         return (f'<a href="https://www.linkedin.com/jobs/search/?keywords={q}" target="_blank" '
                 f'rel="noopener" style="color:inherit;text-decoration:none;border-bottom:1px dotted #BBB">{esc(name)}</a>')
     role_src = [r for r in roles if r["hours"] >= 0.2] or roles
-    maxr=max((r["hours"] for r in role_src), default=1) or 1
     role_rows=""
     for i,r in enumerate(role_src):
-        w=int(r["hours"]/maxr*100); col=palette[i%len(palette)]
-        role_rows+=f"""<div class="bar-row"><div class="bar-label">{_rolelink(r['role'])}</div>
-        <div class="bar-track"><div class="bar-fill" style="width:{max(w,4)}%;background:{col}"></div>
-        <span class="bar-val" data-hours="{r['hours']}">{r['hours']}h · ${r['value']:,}</span></div></div>"""
+        role_rows+=(f'<div class="role-row"><div class="role-name">{_rolelink(r["role"])}</div>'
+                    f'<div class="role-val"><b>{r["hours"]}h</b> · '
+                    f'<span class="g-v" data-hours="{r["hours"]}">${r["value"]:,}</span></div></div>')
 
     # ----- deliverables -> skills -> hours table — each artifact, the skills that built it,
     #       and the expert-equivalent hours attributed to it -----
@@ -270,13 +305,12 @@ def build(data, out_path, anon=False):
                          f'<span class="wbp-jt-h">{grp["hours"]:.1f}h</span></div>'
                          f'<div class="wbp-projs">{projs}</div></div>')
             tree+=(f'<details class="wbp-acc"><summary class="wbp-proc-h">'
-                   f'<span class="wbp-k2" style="color:{pfg}">PROCESS</span>'
                    f'<span class="wbp-acc-t">{esc(proc)}</span>'
                    f'<span class="wbp-acc-meta">{d["sessions"]} session{"s" if d["sessions"]!=1 else ""} · '
                    f'{nproj} project{"s" if nproj!=1 else ""} · {pct}% of time</span>'
                    f'<span class="wbp-h">{d["hours"]:.1f}h · '
                    f'<span class="g-v" data-hours="{d["hours"]:.1f}">${pval:,}</span></span>'
-                   f'<span class="chev">▸</span></summary>'
+                   f'<span class="wbp-caret">▸</span></summary>'
                    f'<div class="wbp-acc-body">{groups}</div></details>')
         jtbd_tree_html=f'<div class="wbp-tree">{tree}</div>'
 
@@ -309,7 +343,7 @@ def build(data, out_path, anon=False):
             f'<details class="wbp-acc"><summary class="wbp-pillar-h">'
             f'<span class="bvm-pill {css}">{esc(pillar)}</span>'
             f'<span class="wbp-acc-meta">{len(gs)} project{"s" if len(gs)!=1 else ""}</span>'
-            f'<span class="wbp-h">{ph:.1f}h</span><span class="chev">▸</span></summary>'
+            f'<span class="wbp-h">{ph:.1f}h</span><span class="wbp-caret">▸</span></summary>'
             f'<div class="wbp-acc-body"><div class="card" style="margin:6px 0 0"><table class="tbl">'
             f'<thead><tr><th>Project</th><th>Assistance offered</th>{cost_th}</tr></thead>'
             f'<tbody>{rows}</tbody></table></div></div></details>')
@@ -545,7 +579,7 @@ a{{color:var(--blue)}}
 .wbp-acc{{background:#fff;border:1px solid #EAE8E6;border-radius:12px;margin:0 0 10px;overflow:hidden}}
 .wbp-acc>summary{{cursor:pointer;list-style:none;display:flex;align-items:center;gap:9px;padding:13px 16px;font-size:14.5px;font-weight:700;color:var(--ink);border-bottom:0}}
 .wbp-acc>summary::-webkit-details-marker{{display:none}}
-.wbp-acc>summary:hover{{background:#FAFAFA}}
+.wbp-acc>summary:hover{{background:#F0F7FD}}
 .wbp-acc>summary .chev{{transition:transform .2s;color:var(--blue);margin-left:4px}}
 .wbp-acc[open]>summary{{border-bottom:1px solid #F0EEEC}}
 .wbp-acc[open]>summary .chev{{transform:rotate(90deg)}}
@@ -556,6 +590,34 @@ a{{color:var(--blue)}}
 .wbp-acc-body .wbp-proc:first-child{{margin-top:8px}}
 .wbp-exp{{margin-left:auto;font-size:11.5px}}
 .wbp-exp a{{color:var(--blue);text-decoration:none;border-bottom:1px dotted #CFE4F7}}
+/* Anchor panel — quiet: it leads the report by position, so it needs no loud chrome */
+.wbp-feature{{background:#F7FBFF;border:1px solid #E4EEF8;border-left:3px solid var(--blue);border-radius:14px;padding:4px 24px 22px;margin:22px 0 30px}}
+.wbp-feature-kicker{{margin-top:20px;font-size:11px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--blue)}}
+.wbp-feature h2.wbp-feat-h{{font-size:23px;margin:4px 0 6px}}
+.wbp-hint{{font-size:12px;color:var(--mut);font-style:italic;margin:0 0 14px}}
+/* Single quiet caret — the only affordance; the whole row is the click target */
+.wbp-caret{{margin-left:12px;flex:none;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:var(--blue);font-size:12px;background:#EFF6FC;transition:transform .2s,background .15s}}
+.wbp-acc>summary:hover .wbp-caret{{background:#DCEBFA}}
+.wbp-acc[open]>summary .wbp-caret{{transform:rotate(90deg)}}
+/* Projects-by-category fold — same accordion grammar, with a category accent dot */
+.catp-wrap{{margin:6px 0 4px}}
+.catp-acc{{margin:0 0 9px}}
+.catp-dot{{width:9px;height:9px;border-radius:50%;flex:none}}
+.catp-h-sum{{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;padding:13px 16px;font-size:14.5px;font-weight:700;color:var(--ink)}}
+.catp-h-sum::-webkit-details-marker{{display:none}}
+.catp-body{{padding:4px 16px 12px 34px}}
+.catp-row{{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;border-top:1px dashed #EEE}}
+.catp-row:first-child{{border-top:none}}
+.catp-t{{font-size:13px;color:#3B3A39;font-weight:500}}
+.catp-proc{{font-size:11px;color:var(--mut);font-weight:400;margin-top:2px}}
+.catp-h{{font-size:12px;font-weight:700;color:var(--mut);white-space:nowrap}}
+.catp-empty{{font-size:12.5px;color:var(--mut);font-style:italic;padding:6px 0}}
+/* Roles as a clean inline list — replaces the role bar chart */
+.role-list{{padding:8px 24px}}
+.role-row{{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:11px 0;border-top:1px solid var(--line)}}
+.role-row:first-child{{border-top:none}}
+.role-name{{font-size:14px;font-weight:600;color:var(--ink)}}
+.role-val{{font-size:13px;color:var(--mut);white-space:nowrap}}
 .dl-filter{{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-bottom:16px}}
 .dl-filter-l{{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--mut);margin-right:4px}}
 .dl-chip{{border:1px solid #CFCFCF;background:#fff;border-radius:14px;padding:3px 11px;font-size:12px;font-weight:600;cursor:pointer;color:var(--mut)}}
@@ -655,16 +717,10 @@ html{{scroll-behavior:smooth}}
   </div>
   {(f'<div class="note-box" style="margin-top:14px"><b>Secondary — speed multiplier:</b> your ~{lev.get("human_equiv_hours",0)}h of research-anchored expert-equivalent effort against an estimated ~{lev.get("exec_hours",0)}h of hands-on time is a <b>{lev.get("speed_multiplier","?")}×</b> multiplier. The expert clock is the sum of cited per-task time-saved bands; the assisted clock is a <b>modeled</b> estimate (OneDrive does not record keystroke time; measured where the telemetry hook is enabled), so treat the multiplier as directional, not a stopwatch.</div>') if lev.get('speed_multiplier') else ''}
 
-  <h2><span class="sec">⏱</span> Where the time went — by task category</h2>
-  <p class="lead">Each run task is valued at its category's research-anchored <b>Typical</b> minutes saved (methodology v4). Hours are fixed; dollar values follow your hourly rate.</p>
-  <div class="card">{bar_rows}</div>
-
-  <h2><span class="sec">🧑‍💼</span> Roles Cowork assembled for me</h2>
-  <p class="lead">The professional roles Cowork stood in for — the specialist hats it wore so the work got done without added headcount, with the expert-equivalent hours it covered in each. This is where time saved becomes <b>capability</b>: specialist roles assembled on demand, directly in your workflow.</p>
-  <div class="card">{role_rows}</div>
-
-  <h2><span class="sec">📦</span> Work by business process</h2>
-  <p class="lead">Your work anchored on the <b>Business Process</b> that produced it — each process carries the <b>Job-to-be-Done</b> it served and the <b>projects</b> beneath it — or seen by the <b>Business Value Pillar</b> it creates value in. Same projects, two lenses. <b>Click any process to expand</b> its JTBD and projects.</p>
+  <div class="wbp-feature">
+  <div class="wbp-feature-kicker">How your time rolls up</div>
+  <h2 class="wbp-feat-h"><span class="sec">📦</span> Work by business process</h2>
+  <p class="lead">Your work anchored on the <b>Business Process</b> that produced it — each process carries the <b>Job-to-be-Done</b> it served and the <b>projects</b> beneath it — or seen by the <b>Business Value Pillar</b> it creates value in. Same projects, two lenses.</p>
   <details class="gl" style="margin:0 0 14px"><summary>How to read this — Process ▸ JTBD ▸ Project &amp; the two lenses <span class="chev">▸</span></summary>
     <div class="gl-body"><div style="font-size:13px;line-height:1.75">
       <p style="margin:0 0 9px">Your work rolls up a three-level ladder, anchored on Process. <b>Value flows up the ladder; work flows down.</b></p>
@@ -682,11 +738,23 @@ html{{scroll-behavior:smooth}}
       <button class="wbp-btn" id="wbpPillarBtn" onclick="wbpMode(true)">By pillar</button>
       <span class="wbp-exp"><a href="#" onclick="wbpExpand(event,true)">Expand all</a> · <a href="#" onclick="wbpExpand(event,false)">Collapse all</a></span>
     </div>
+    <p class="wbp-hint">Click any process row to open its Jobs-to-be-Done and the projects beneath it.</p>
     <div class="wbp-jtbdview">{jtbd_tree_html}</div>
     <div class="wbp-pillarview">{pillar_acc_html}
       <p style="margin:14px 0 0;font-size:12px;color:var(--mut)">Each project grouped under the Business Value Pillar it advances &mdash; <b>{k['sessions']} projects</b> across {k['active_days']} active days. Click a pillar to expand its projects.</p>
     </div>
   </div>
+  </div>
+
+  <h2><span class="sec">⏱</span> Projects by category</h2>
+  <p class="lead">The same projects, grouped by the <b>task category</b> that captures the work. Each bucket's hours and value are research-anchored (methodology v4); expand a category to see the projects inside it. A project can appear in up to two categories.</p>
+  <div class="catp-wrap">{cat_fold}</div>
+
+  <h2><span class="sec">🧑‍💼</span> Roles Cowork assembled for me</h2>
+  <p class="lead">The professional roles Cowork stood in for — the specialist hats it wore so the work got done without added headcount, with the expert-equivalent hours it covered in each. This is where time saved becomes <b>capability</b>: specialist roles assembled on demand, directly in your workflow.</p>
+  <div class="card role-list">{role_rows}</div>
+
+
 
   <h2><span class="sec">📦</span> Deliverables &amp; the skills behind them</h2>
   <p class="lead">Every artifact Cowork produced, the professional skills that went into it, and the expert-equivalent hours attributed to each. Use the chips to <b>filter by the skill applied</b>.</p>

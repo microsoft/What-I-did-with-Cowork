@@ -5,19 +5,17 @@ Copilot Cowork session history in OneDrive. It leads with **research-anchored Ti
 **professional-services-equivalent Value**, then maps your work to your own Jobs, Business Processes,
 and the four Value Pillars.
 
-> **v24:** the durable taxonomy memory is now **per-user and owner-scoped** — the registry lives on the
-> user's own mount (syncs to **their** OneDrive `Documents/Cowork/`), carries an `owner` stamp, and is
-> only used when the owner matches the invoking user; a first run mints processes from the user's own
-> sessions. See [`CHANGELOG-v24.md`](CHANGELOG-v24.md).
->
-> **v23:** **Business Process** is the aggregation anchor (**Process ▸ JTBD ▸ Project**) with a durable
-> taxonomy memory so process/project names stay stable across runs. See [`CHANGELOG-v23.md`](CHANGELOG-v23.md).
->
 > **v20:** value model is now **RUNS × BAND**, anchored to the Cowork Time-Savings methodology deck —
 > time saved = Σ runs × each run's category band (the band already contains the write→test→debug /
 > draft→rewrite→format→polish chain). Run counts come from the agentic tool-chains (telemetry-grounded:
 > ~6 code-edits/code-run, ~5 research-calls/analysis-run). No per-LOC, no authoring add-on. See
 > [`CHANGELOG-v20.md`](CHANGELOG-v20.md).
+>
+> **v19:** **real per-session cost** — the agent reads Cowork's `/cost` (Copilot Credits) by driving the
+> browser to the web app, screenshotting each session's "N credits used for this task so far," and logging
+> it to a durable ledger. The report gains a **"Credits · cost"** column (credits × **1¢/credit**, GA list).
+> No estimation — the number can't be recomputed without Microsoft's exact rate card, so it's read live.
+> Works whether you use the browser or the native Copilot app. See [`CHANGELOG-v19.md`](CHANGELOG-v19.md).
 >
 > **v18:** the harvest is now an **allow-list scoped to the Cowork app** — it reads **all three**
 > `Documents/Cowork/` layouts (`Tasks/<goal>-<date>/`, root `<goal>-<date>/`, and legacy
@@ -34,7 +32,7 @@ and the four Value Pillars.
 
 ## Get Started in 4 Steps
 
-1. **Download** `cowork-roi-report-skill-v24.zip`. *(No need to unzip — attach it as-is.)*
+1. **Download** `cowork-roi-report-skill-v20.zip`. *(No need to unzip — attach it as-is.)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session.
 3. **Click the ➕ (plus) symbol** to attach the zip file, then send: **Add this skill.**
 4. Once it's added, ask: **Generate my impact summary report.**
@@ -49,22 +47,17 @@ You'll be asked which period to measure (7, 15 or 30 days), then the report is b
 cowork-roi-report/
 ├── SKILL.md                     # skill definition + workflow (loaded by Cowork)
 ├── README.md                    # this file
-├── CHANGELOG-v24.md             # latest — per-user, owner-scoped taxonomy memory
-├── CHANGELOG-v23.md             # process-anchored taxonomy + durable taxonomy memory
-├── CHANGELOG-v20.md             # value model = runs × band (methodology-deck-anchored)
+├── CHANGELOG-v20.md             # latest — value model = runs × band (methodology-deck-anchored)
+├── CHANGELOG-v19.md             # real /cost credits via browser sweep, Credits·cost column
 ├── CHANGELOG-v18.md             # Cowork-app allow-list harvest, Scout excluded
-├── CHANGELOG-v15.md             # (+ v5/v6/v11/v13/v14/v16/v19/v21/v22 history)
+├── CHANGELOG-v15.md             # (+ v5/v6/v11/v13/v14/v15/v16 history)
 ├── scripts/
-│   ├── reconcile_taxonomy.py    # align-first / create-if-novel; owner-scoped registry; runs before classify.py
 │   ├── classify.py              # deterministic classifier → inputs/outputs + tasks schema
 │   ├── compute.py               # applies the methodology → payload JSON
 │   ├── build_report.py          # renders the self-contained HTML report
 │   ├── mine_session.py          # mines the live session transcript for real run-time (telemetry hook)
-│   ├── statusline_cost.py       # optional status-line cost helper
+│   ├── statusline_cost.py       # captures real per-session cost (statusLine hook)
 │   ├── apqc_taxonomy.json       # generic APQC fallback business-process taxonomy
-│   ├── roles_taxonomy.json      # role keyword fallback for "roles assembled"
-│   ├── process_overrides.json   # per-user session→process map (ships empty `{}`; written to working/ at run time)
-│   ├── process_overrides.example.json  # example override map
 │   └── skills_vocabulary.json   # controlled vocabulary for "skills augmented"
 ├── references/
 │   ├── map-my-work-playbook.md  # derives your own Jobs ▸ Processes ▸ Workflows (run inline at step 4b)
@@ -105,8 +98,9 @@ to Cowork-app-created artifacts generalises cleanly.
 - **Hero** — research-anchored **Time Saved** (conservative / typical / optimistic) + **Value**
 - **KPIs** — sessions, run tasks, deliverables, active days, expert-equivalent hours
 - **Value at a glance** — the four Value Pillars with example KPIs
-- **Work by business process** — **Process ▸ JTBD ▸ Project**, toggleable between a By-process view and
-  a Business-Value-Pillar view
+- **Work by business process** — an upfront **Job ▸ Business Process ▸ JTBD** visual, then a table you
+  can **toggle between Business Process and Job-to-be-Done** (banded by Job × Value Pillar; auto-hiding
+  **session-cost** column)
 - **Where the time went — by task category** — research-anchored bands
 - **Roles Cowork assembled for me** — the **exact professional roles a billing firm would charge** for
   your work (Data Analyst, Management Consultant, Software Engineer, …), each **linked** to a job
