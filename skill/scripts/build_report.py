@@ -65,6 +65,7 @@ ALL_CATS = [
 ]
 
 GLOSSARY_TERMS = [
+ ("Cowork-fit (H / M / L)", "How much a project needed Cowork, from the single-surface test: could one in-app / surface-specific Copilot have done it end-to-end? H (green) = Cowork-worthy - it either builds/packages a skill or app, runs a cross-system automation, or spans two or more Copilot surfaces (e.g. Outlook + Excel), which no single Copilot does. M (yellow) = Cowork-specific setup/config — installing, sharing or scheduling a skill or prompt. L (red) = a single surface-specific Copilot (Excel, Word, PowerPoint, Outlook, Teams or chat) could have done it. Heuristic and directional - inferred from the harvested artifacts, systems and roles, not from measured tool telemetry (available for only some sessions)."),
  ("Run task", "One discrete thing you asked Cowork to do that maps to a single methodology category (e.g. build a deck, run an analysis, write a script). A session can contain several run tasks."),
  ("Typical band (min/task)", "The research-anchored minutes-saved value the methodology applies per run task in a category. This report uses the deck's detailed per-category Typical values. Each Typical is computed as a per-instance figure from a published study × the typical number of instances in a Cowork run — not picked from a range."),
  ("Low / High band", "The published floor and ceiling around each Typical. The report shows your total at Low, Typical and High so you can see the conservative-to-optimistic range."),
@@ -80,9 +81,19 @@ GLOSSARY_TERMS = [
 ]
 
 def esc(s): return html.escape(str(s))
+_CF_METHOD={"rule":"rule-based","AI-reviewed":"AI-reviewed (adjusted from rule)","AI-confirmed":"AI-reviewed (confirmed rule)"}
+def cf_badge(g):
+    cf=(g or {}).get("cowork_fit") or {}
+    gr=cf.get("grade")
+    if not gr: return ""
+    lbl=cf.get("label",""); why=cf.get("why","")
+    mth=_CF_METHOD.get(cf.get("method","rule"),"rule-based")
+    tip=((("%s: %s" % (lbl, why)) if why else lbl) or gr)+"  ["+mth+"]"
+    return '<span class="cf cf-%s" title="%s">%s</span>' % (gr, esc(tip), gr)
 
 def build(data, out_path, anon=False):
     m=data["meta"]; k=data["kpis"]; val=data["value"]; cats=data["categories"]
+    cfs=data.get("cowork_fit_summary",{"H":0,"M":0,"L":0})
     disp_user=("Cowork user (anonymized)" if anon else m["user"])
     intents=data["intents"]; roles=data["roles"]; goals=data["goals"]; heat=data["heatmap"]
     skills_aug=data.get("skills_augmented",[]); inventory=data.get("inventory",[])
@@ -134,7 +145,7 @@ def build(data, out_path, anon=False):
         rows=""
         for g in projs:
             cb=' <span class="pill conv">chat-only</span>' if g.get("conversational") else ""
-            rows+=(f'<div class="catp-row"><div class="catp-t">{esc(g["title"])}{cb}'
+            rows+=(f'<div class="catp-row"><div class="catp-t">{esc(g["title"])}{cb} {cf_badge(g)}'
                    f'<div class="catp-proc">{esc(g.get("process","—"))}</div></div>'
                    f'<div class="catp-h">{g.get("hours_typical",0):.1f}h</div></div>')
         if not rows:
@@ -423,9 +434,56 @@ def build(data, out_path, anon=False):
 
     top_roles_str=" · ".join(_rolelink(r["role"]) for r in roles[:3] if r["hours"]>=0.2)
 
+    # ---- Server-side "Your projects" rows (never empty) + slim goals for the group dropdown ----
+    CF_NAME={"H":"Needed Cowork (H)","M":"Cowork-platform op (M)","L":"Single-Copilot task (L)"}
+    pj_goals=[g for g in goals if g.get("minutes_typical",0)>0 or g.get("conversational")]
+    def _pj_row(g):
+        v=round(g.get("hours_typical",0)*rate)
+        conv=' <span class="pj-conv">chat-only</span>' if g.get("conversational") else ""
+        return ('<tr><td class="pj-p"><span class="pj-t">%s</span>%s</td>'
+                '<td class="pj-cf">%s</td>'
+                '<td class="num">%.1fh</td><td class="num">$%s</td></tr>'
+                )%(esc(g["title"]),conv,cf_badge(g),
+                   g.get("hours_typical",0),format(v,","))
+    def pj_rows_grouped(group):
+        gs=sorted(pj_goals,key=lambda x:-x.get("hours_typical",0))
+        if group=="none":
+            return "".join(_pj_row(g) for g in gs)
+        buckets={}
+        for g in gs:
+            if group=="category":
+                keys=g.get("categories") or ["\u2014"]
+            elif group=="pillar":
+                keys=[g.get("value_pillar","\u2014")]
+            elif group=="cf":
+                keys=[(g.get("cowork_fit") or {}).get("grade","\u2014")]
+            else:
+                keys=[g.get("process","\u2014")]
+            for kk in keys: buckets.setdefault(kk,[]).append(g)
+        grand=sum(g.get("hours_typical",0) for g in pj_goals) or 1
+        out=""
+        for name in sorted(buckets,key=lambda kk:-sum(x.get("hours_typical",0) for x in buckets[kk])):
+            rows=buckets[name]; gh=sum(x.get("hours_typical",0) for x in rows)
+            label=CF_NAME.get(name,name) if group=="cf" else name
+            pct=round(gh/grand*100)
+            out+=('<tr class="pj-gh"><td colspan="2"><span class="pj-gh-t">%s</span>'
+                  '<span class="pj-gh-n">%d project%s</span></td>'
+                  '<td class="num">%.1fh</td><td class="num">%d%%</td></tr>'
+                  )%(esc(label),len(rows),"" if len(rows)==1 else "s",gh,pct)
+            out+="".join(_pj_row(g) for g in rows)
+        return out
+    pj_initial_rows=pj_rows_grouped("process")
+    pj_goals_json=json.dumps([{
+        "title":g.get("title",""),"process":g.get("process",""),
+        "categories":g.get("categories") or [],
+        "hours_typical":g.get("hours_typical",0),
+        "cowork_fit":{"grade":(g.get("cowork_fit") or {}).get("grade"),"label":(g.get("cowork_fit") or {}).get("label",""),"why":(g.get("cowork_fit") or {}).get("why",""),"method":(g.get("cowork_fit") or {}).get("method","rule")},"conversational":bool(g.get("conversational"))
+    } for g in pj_goals])
+
     payload_json=json.dumps({
         "rate":rate,
         "hours":{"low":val["hours_low"],"typical":val["hours_typical"],"high":val["hours_high"]},
+        "goals":json.loads(pj_goals_json),
     })
 
     # ---- real-cost ROI: research-anchored value vs real Copilot-credit cost (credits x $0.01 list) ----
@@ -664,6 +722,47 @@ a{{color:var(--blue)}}
 .catp-proc{{font-size:11px;color:var(--mut);font-weight:400;margin-top:2px}}
 .catp-h{{font-size:12px;font-weight:700;color:var(--mut);white-space:nowrap}}
 .catp-empty{{font-size:12.5px;color:var(--mut);font-style:italic;padding:6px 0}}
+/* Cowork-fit badges (single-surface test) */
+/* Cowork-fit as a colored circle: H green, M yellow, L red */
+.cf{{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:800;line-height:1;vertical-align:middle;cursor:help;box-shadow:0 0 0 1px rgba(0,0,0,.06)}}
+.cf:hover{{box-shadow:0 0 0 2px rgba(15,108,189,.35)}}
+.cf-H{{background:#1A7F37;color:#fff}}
+.cf-M{{background:#F2C400;color:#3A2E00}}
+.cf-L{{background:#D13438;color:#fff}}
+.cf-summary{{display:flex;flex-wrap:wrap;gap:22px;align-items:center;background:#FBFAFB;border:1px solid #EAE8E6;border-radius:12px;padding:12px 16px;margin:2px 0 14px;font-size:12.5px}}
+.cf-summary .cf-kpi{{display:flex;align-items:center;gap:8px}}
+.cf-summary .cf-n{{font-size:19px;font-weight:800;color:var(--ink)}}
+.cf-summary .cf-lbl{{color:var(--mut)}}
+.cf-ih{{color:#1A7F37}} .cf-im{{color:#B8900B}} .cf-il{{color:#D13438}}
+.pj-cf{{text-align:center}}
+/* Unified "Your projects" table (Option A) */
+.pj-controls{{display:flex;flex-wrap:wrap;gap:20px 26px;align-items:center;margin:8px 0 14px}}
+.pj-lbl{{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--mut);margin-right:8px}}
+.pj-btn,.pj-chip{{border:1px solid #CFCFCF;background:#fff;border-radius:14px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;color:var(--mut);margin-right:6px}}
+.pj-btn:hover,.pj-chip:hover{{border-color:var(--blue);color:var(--blue)}}
+.pj-select{{border:1px solid #CFCFCF;border-radius:8px;padding:6px 30px 6px 12px;font-size:13px;font-weight:600;color:var(--ink);background:#fff;cursor:pointer}}
+.pj-select:hover{{border-color:var(--blue)}}
+.pj-btn.active,.pj-chip.active{{background:var(--blue);color:#fff;border-color:var(--blue)}}
+.pj-tbl{{width:100%;border-collapse:collapse;font-size:13px}}
+.pj-tbl th{{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--mut);padding:12px 14px;border-bottom:2px solid var(--line);white-space:nowrap}}
+.pj-tbl th.num,.pj-tbl td.num{{text-align:right;white-space:nowrap}}
+.pj-tbl td{{padding:11px 14px;border-top:1px solid var(--line);vertical-align:top}}
+.pj-p .pj-t{{font-weight:600;color:var(--ink)}}
+.pj-p .pj-sub{{display:block;font-size:11px;color:var(--mut);margin-top:2px}}
+.pj-tag{{display:inline-block;background:#F3F2F1;color:#3B3A39;border-radius:9px;padding:1px 7px;font-size:10.5px;margin:0 3px 2px 0;white-space:nowrap}}
+.rp-h3{{font-size:16px;font-weight:700;margin:20px 0 4px}}
+.rp-h3 .sec{{color:var(--blue);margin-right:6px}}
+.pj-conv{{display:inline-block;background:#EFF6FC;color:var(--blue);border:1px solid #CFE4F7;border-radius:9px;padding:0 6px;font-size:9.5px;font-weight:700;margin-left:4px}}
+.pj-gh td{{background:#F7FBFF;border-top:2px solid #E4EEF8;padding:9px 14px}}
+.pj-gh-t{{font-weight:800;font-size:12.5px;color:var(--ink)}}
+.pj-gh-n{{font-size:11px;color:var(--mut);margin-left:10px;font-weight:600}}
+.pj-empty{{font-size:12.5px;color:var(--mut);font-style:italic;padding:14px}}
+/* Collapsible deep-dive sections */
+.section-toggle{{border:1px solid var(--line);border-radius:12px;background:var(--card);margin:18px 0;padding:0 20px 2px}}
+.section-toggle>summary{{cursor:pointer;list-style:none;padding:16px 0;font-size:18px;font-weight:700;color:var(--ink)}}
+.section-toggle>summary::-webkit-details-marker{{display:none}}
+.section-toggle>summary .sec{{color:var(--blue);margin-right:6px}}
+.section-toggle .st-hint{{font-size:12px;font-weight:600;color:var(--blue);margin-left:6px}}
 /* Roles as a clean inline list — replaces the role bar chart */
 .role-list{{padding:8px 24px}}
 .role-row{{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:11px 0;border-top:1px solid var(--line)}}
@@ -741,43 +840,6 @@ html{{scroll-behavior:smooth}}
   </div>
   {roi_html}
 
-  <div class="card" style="margin-top:18px">
-    <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin-bottom:14px">Value at a glance — {esc(win['label'])}</div>
-    <table class="tbl" style="font-size:13.5px">
-      <thead><tr>
-        <th style="width:160px">Value pillar</th>
-        <th>Business outcome <span style="font-weight:400;font-style:italic">(lagging KPI)</span></th>
-        <th>Cowork indicator <span style="font-weight:400;font-style:italic">(leading KPI)</span></th>
-        <th style="text-align:right;white-space:nowrap">Your result</th>
-      </tr></thead>
-      <tbody>
-        <tr>
-          <td><span class="bvm-pill rev">Revenue Growth</span></td>
-          <td>Incremental gross revenue — capacity freed for revenue-generating work<div style="font-size:11.5px;color:var(--mut);margin-top:3px;font-style:italic">Tangible · money coming in</div></td>
-          <td>Hours redeployed from production to higher-value work</td>
-          <td style="text-align:right"><span class="muted-na">not directly measured</span></td>
-        </tr>
-        <tr>
-          <td><span class="bvm-pill cost">Cost Reduction</span></td>
-          <td>Labor &amp; budget savings — specialist work delivered without added headcount<div style="font-size:11.5px;color:var(--mut);margin-top:3px;font-style:italic">Tangible · money going out</div></td>
-          <td>Professional-services equivalent at your rate</td>
-          <td style="text-align:right"><b style="font-size:16px;color:var(--green)">$<span class="money" data-h="{val['hours_typical']}">{val['value_typical']:,}</span></b></td>
-        </tr>
-        <tr>
-          <td><span class="bvm-pill risk">Risk Mitigation</span></td>
-          <td>Penalties &amp; losses avoided — earlier, better-supported decisions<div style="font-size:11.5px;color:var(--mut);margin-top:3px;font-style:italic">Intangible · money going out</div></td>
-          <td>Faster, evidence-backed analysis &amp; review</td>
-          <td style="text-align:right"><span class="muted-na">not directly measured</span></td>
-        </tr>
-        <tr>
-          <td><span class="bvm-pill trans">Transformation</span></td>
-          <td>Adoption, decision quality, retention — new AI-assisted ways of working<div style="font-size:11.5px;color:var(--mut);margin-top:3px;font-style:italic">Intangible · money coming in</div></td>
-          <td>Speed vs. unassisted expert · professional roles Cowork substituted for<div style="font-size:11px;color:var(--mut);margin-top:4px;font-weight:400">{top_roles_str}</div></td>
-          <td style="text-align:right"><b style="font-size:16px;color:#6B2FA0">{val['speed_typical']}×</b> faster · <b style="color:#6B2FA0">{len([r for r in roles if r['hours']>=0.2])}</b> roles substituted</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
 
   <div class="kpi-grid">
     <div class="kpi"><div class="n">{k['sessions']}</div><div class="l">Cowork sessions</div></div>
@@ -789,49 +851,37 @@ html{{scroll-behavior:smooth}}
   {(f'<div class="note-box" style="margin-top:14px"><b>Secondary — speed multiplier:</b> your ~{lev.get("human_equiv_hours",0)}h of research-anchored expert-equivalent effort against an estimated ~{lev.get("exec_hours",0)}h of hands-on time is a <b>{lev.get("speed_multiplier","?")}×</b> multiplier. The expert clock is the sum of cited per-task time-saved bands; the assisted clock is a <b>modeled</b> estimate (OneDrive does not record keystroke time; measured where the telemetry hook is enabled), so treat the multiplier as directional, not a stopwatch.</div>') if lev.get('speed_multiplier') else ''}
 
   <div class="wbp-feature">
-  <div class="wbp-feature-kicker">How your time rolls up</div>
-  <h2 class="wbp-feat-h"><span class="sec">📦</span> Work by business process</h2>
-  <p class="lead">Your work anchored on the <b>Business Process</b> that produced it — each process carries the <b>Job-to-be-Done</b> it served and the <b>projects</b> beneath it — or seen by the <b>Business Value Pillar</b> it creates value in. Same projects, two lenses.</p>
-  <details class="gl" style="margin:0 0 14px"><summary>How to read this — Process ▸ JTBD ▸ Project &amp; the two lenses <span class="chev">▸</span></summary>
-    <div class="gl-body"><div style="font-size:13px;line-height:1.75">
-      <p style="margin:0 0 9px">Your work rolls up a three-level ladder, anchored on Process. <b>Value flows up the ladder; work flows down.</b></p>
-      <div><b>Business Process</b> &mdash; <i>the repeatable &ldquo;machine&rdquo; that produces an outcome.</i> It has a customer and a metric, and it runs again and again &mdash; not a one-off. This is the anchor everything rolls up to.</div>
-      <div style="margin-top:7px">&nbsp;&nbsp;└ <b>Job-to-be-Done (JTBD)</b> &mdash; <i>the specific stakeholder outcome that process is &ldquo;hired&rdquo; to deliver</i> &mdash; what a real person actually needs done, and why.</div>
-      <div style="margin-top:7px">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└ <b>Project</b> &mdash; <i>the actual thing Cowork delivered</i> for that JTBD, carrying its <b>impact</b>: expert-equivalent hours saved &middot; value &middot; speed.</div>
-      <p style="margin:11px 0 4px"><b>The same projects, seen through two lenses:</b></p>
-      <div><b>&middot; By process</b> &mdash; the ladder above. Answers <i>&ldquo;which repeatable capabilities is my time going into, and who do they serve?&rdquo;</i></div>
-      <div style="margin-top:4px"><b>&middot; By Business Value Pillar</b> &mdash; the same projects grouped by the kind of value they create &mdash; <b>Revenue Growth</b> (top-line), <b>Cost Reduction</b> (efficiency), <b>Risk Mitigation</b> (losses avoided), <b>Transformation</b> (new ways of working). Answers <i>&ldquo;what business value did this work create?&rdquo;</i></div>
-    </div></div>
-  </details>
-  <div id="wbpView">
-    <div class="wbp-toggle"><span>View:</span>
-      <button class="wbp-btn active" id="wbpJtbdBtn" onclick="wbpMode(false)">By process</button>
-      <button class="wbp-btn" id="wbpPillarBtn" onclick="wbpMode(true)">By pillar</button>
-      <span class="wbp-exp"><a href="#" onclick="wbpExpand(event,true)">Expand all</a> · <a href="#" onclick="wbpExpand(event,false)">Collapse all</a></span>
-    </div>
-    <p class="wbp-hint">Click any process row to open its Jobs-to-be-Done and the projects beneath it.</p>
-    <div class="wbp-jtbdview">{jtbd_tree_html}</div>
-    <div class="wbp-pillarview">{pillar_acc_html}
-      <p style="margin:14px 0 0;font-size:12px;color:var(--mut)">Each project grouped under the Business Value Pillar it advances &mdash; <b>{k['sessions']} projects</b> across {k['active_days']} active days. Click a pillar to expand its projects.</p>
-    </div>
+  <div class="wbp-feature-kicker">Your projects — one view</div>
+  <h2 class="wbp-feat-h"><span class="sec">📦</span> Your projects</h2>
+  <div class="cf-summary">
+    <span class="cf-kpi"><span class="cf cf-H">H</span><span class="cf-n">{cfs['H']}</span><span class="cf-lbl">needed Cowork</span></span>
+    <span class="cf-kpi"><span class="cf cf-M">M</span><span class="cf-n">{cfs['M']}</span><span class="cf-lbl">managing Cowork (install / share / schedule)</span></span>
+    <span class="cf-kpi"><span class="cf cf-L">L</span><span class="cf-n">{cfs['L']}</span><span class="cf-lbl">a single Copilot could do it</span></span>
+  </div>
+  <p class="lead" style="margin:0 0 12px">All your projects in one table, each with a <b>Cowork-fit</b> dot — <b class="cf-ih">H</b> needed Cowork · <b class="cf-im">M</b> managing Cowork · <b class="cf-il">L</b> a single Copilot could do it. <b>Hover any dot</b> for the specific reason. <b>Group by</b> process or category; the rows regroup in place, so you read the list once. Value follows your hourly rate.</p>
+  <div class="pj-controls">
+    <label class="pj-lbl" for="projGroupSel">Group by</label>
+    <select id="projGroupSel" class="pj-select" onchange="projGroup(this.value)">
+      <option value="process" selected>Process</option>
+      <option value="category">Category</option>
+    </select>
+  </div>
+  <div class="card" style="padding:4px 0 0">
+    <table class="pj-tbl">
+      <thead><tr><th>Project</th><th>Cowork-fit</th><th class="num">Hours</th><th class="num">Value</th></tr></thead>
+      <tbody id="projRows">{pj_initial_rows}</tbody>
+    </table>
   </div>
   </div>
-
-  <h2><span class="sec">⏱</span> Projects by category</h2>
-  <p class="lead">The same projects, grouped by the <b>task category</b> that captures the work. Each bucket's hours and value are research-anchored (methodology v4); expand a category to see the projects inside it. A project can appear in up to two categories.</p>
-  <div class="catp-wrap">{cat_fold}</div>
 
   <h2><span class="sec">🧑‍💼</span> Roles Cowork assembled for me</h2>
-  <p class="lead">The professional roles Cowork stood in for — the specialist hats it wore so the work got done without added headcount, with the expert-equivalent hours it covered in each. This is where time saved becomes <b>capability</b>: specialist roles assembled on demand, directly in your workflow.</p>
-  <div class="card role-list">{role_rows}</div>
-
-  <h2><span class="sec">🗺️</span> Roles × projects heatmap</h2>
-  <p class="lead">Which specialist role went into which project. <b>Projects run down the side</b> (most hours first) and <b>roles across the top</b> (top {RP_TOP_N} by hours; the rest fold into <b>Other</b>). Each project's expert-equivalent hours are split evenly across the roles it needed, so a darker cell = more of that role in that project.</p>
+  <p class="lead">The professional roles Cowork stood in for — the specialist hats it wore so the work got done without added headcount — and <b>which project each went into</b>. <b>Projects run down the side</b> (most hours first), <b>roles across the top</b> (top {RP_TOP_N} by hours; the rest fold into <b>Other</b>). A darker cell = more of that role's expert-hours in that project; the <b>Role total</b> row is the total time each role covered.</p>
   <div class="card">{heatmap_html}</div>
 
 
 
-  <h2><span class="sec">📦</span> Deliverables &amp; the skills behind them</h2>
+  <details class="section-toggle">
+  <summary><span class="sec">📦</span> Deliverables &amp; the skills behind them <span class="st-hint">show / hide</span></summary>
   <p class="lead">Every artifact Cowork produced, the professional skills that went into it, and the expert-equivalent hours attributed to each. Use the chips to <b>filter by the skill applied</b>.</p>
   <div class="card">{deliv_filter_html}<table class="tbl">
     <thead><tr><th>Deliverable</th><th>Skills applied</th><th>Expert effort</th></tr></thead>
@@ -839,6 +889,7 @@ html{{scroll-behavior:smooth}}
     <p class="dl-empty" style="display:none;margin:10px 2px 0;font-size:12.5px;color:var(--mut)">No deliverables match that skill.</p>
     <p style="margin:12px 0 0;font-size:12px;color:var(--mut)">Per-deliverable hours = an equal share of its session's research-anchored expert time, so they sum back to the totals above. Chat-only sessions (no saved file) appear only in the role bars, not here.</p>
   </div>
+  </details>
 
   <h2 id="glossary"><span class="sec">📐</span> Methodology &amp; glossary</h2>
   <p class="lead">Every number above is traceable. Expand to see how each metric and band is derived — grounded in the Cowork Time-Savings Methodology v4 and its published sources.</p>
@@ -903,7 +954,35 @@ function recalc(){{
   document.querySelectorAll('.g-v').forEach(function(e){{e.textContent='$'+fmt(Math.round(parseFloat(e.dataset.hours)*rate));}});
 }}
 document.getElementById('rate').addEventListener('input',recalc);
+
+var PJ_GROUP='process';
+function pjEsc(x){{return String(x==null?'':x).replace(/[&<>"]/g,function(c){{return {{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}}[c];}});}}
+var CF_METHOD={{rule:'rule-based','AI-reviewed':'AI-reviewed (adjusted from rule)','AI-confirmed':'AI-reviewed (confirmed rule)'}};
+function pjBadge(cf){{if(!cf||!cf.grade)return '';var m=CF_METHOD[cf.method||'rule']||'rule-based';var tip=((cf.label||'')+(cf.why?(': '+cf.why):''))+'  ['+m+']';return '<span class="cf cf-'+cf.grade+'" title="'+pjEsc(tip||cf.grade)+'">'+cf.grade+'</span>';}}
+function pjRateVal(){{return parseFloat(document.getElementById('rate').value)||0;}}
+function pjRowsHtml(list,rate){{var h='';list.forEach(function(g){{var v=Math.round((g.hours_typical||0)*rate);var conv=g.conversational?' <span class="pj-conv">chat-only</span>':'';h+='<tr><td class="pj-p"><span class="pj-t">'+pjEsc(g.title)+'</span>'+conv+'</td>'+'<td class="pj-cf">'+pjBadge(g.cowork_fit)+'</td>'+'<td class="num">'+(g.hours_typical||0).toFixed(1)+'h</td>'+'<td class="num">$'+fmt(v)+'</td></tr>';}});return h;}}
+function projRender(){{var tb=document.getElementById('projRows'); if(!tb)return; var rate=pjRateVal();
+  var all=(DATA.goals||[]).filter(function(g){{return (g.hours_typical||0)>0||g.conversational;}});
+  all.sort(function(a,b){{return (b.hours_typical||0)-(a.hours_typical||0);}});
+  var gb=PJ_GROUP;
+  if(gb==='none'){{tb.innerHTML=pjRowsHtml(all,rate);return;}}
+  var groups={{}};
+  all.forEach(function(g){{var keys;
+    if(gb==='category')keys=(g.categories&&g.categories.length)?g.categories:['\u2014'];
+    else if(gb==='pillar')keys=[g.value_pillar||'\u2014'];
+    else if(gb==='cf')keys=[(g.cowork_fit&&g.cowork_fit.grade)||'\u2014'];
+    else keys=[g.process||'\u2014'];
+    keys.forEach(function(k){{(groups[k]=groups[k]||[]).push(g);}});}});
+  var grand=0; all.forEach(function(g){{grand+=(g.hours_typical||0);}}); if(!grand)grand=1;
+  var names=Object.keys(groups).sort(function(a,b){{var sa=0,sb=0;groups[a].forEach(function(g){{sa+=(g.hours_typical||0);}});groups[b].forEach(function(g){{sb+=(g.hours_typical||0);}});return sb-sa;}});
+  var cfName={{H:'Needed Cowork (H)',M:'Cowork-platform op (M)',L:'Single-Copilot task (L)'}};
+  var html='';
+  names.forEach(function(k){{var rows=groups[k].slice();var gh=0;rows.forEach(function(g){{gh+=(g.hours_typical||0);}});var label=(gb==='cf'&&cfName[k])?cfName[k]:k;var pct=Math.round(gh/grand*100);html+='<tr class="pj-gh"><td colspan="2"><span class="pj-gh-t">'+pjEsc(label)+'</span><span class="pj-gh-n">'+rows.length+' project'+(rows.length!==1?'s':'')+'</span></td><td class="num">'+gh.toFixed(1)+'h</td><td class="num">'+pct+'%</td></tr>';html+=pjRowsHtml(rows,rate);}});
+  tb.innerHTML=html;}}
+function projGroup(val){{PJ_GROUP=val;projRender();}}
+document.getElementById('rate').addEventListener('input',projRender);
 recalc();
+projRender();
 </script>
 </body></html>"""
     open(out_path,"w",encoding="utf-8").write(H)

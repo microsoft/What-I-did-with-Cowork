@@ -1,6 +1,6 @@
 # What Cowork Did for Me
 
-> A personal impact report skill for **Microsoft Copilot Cowork** — it leads with research-anchored **Time Saved** and its **professional-services-equivalent value**, then maps your work to your own Jobs, Business Processes, and the four Value Pillars.
+> A personal impact report skill for **Microsoft Copilot Cowork** — it leads with research-anchored **Time Saved** and its **professional-services-equivalent value**, then maps your work to your own Business Processes and Projects and grades each project's **Cowork-fit**.
 
 ![Report Hero](images/report-hero.png)
 
@@ -14,19 +14,30 @@ The skill:
 - Harvests your Cowork session artifacts (inputs analyzed & outputs produced) from OneDrive — scoped to the Cowork app across all three `Documents/Cowork/` layouts
 - Classifies each session into research-anchored task categories
 - Computes **research-anchored Time Saved** and its **professional-services-equivalent value**
-- Maps your work to your own **Jobs ▸ Business Processes ▸ Jobs-to-be-Done** and the **four Value Pillars**
+- Maps your work to your own **Business Processes ▸ Projects** and grades each project's **Cowork-fit** — did it really need Cowork, or could a single in-app Copilot have done it?
 - Renders a self-contained, interactive HTML report you can share or print to PDF
 
 Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-Did-Copilot), adapted for Copilot Cowork.
 
 ---
 
-## Download
+## Installation
+
+**Let Cowork install it for you (easiest):**
+
+1. **Download** the latest version: [`cowork-roi-report-skill-v34.zip`](cowork-roi-report-skill-v34.zip) *(no need to unzip — attach it as-is)*
+2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session
+3. **Click the ➕ (plus) symbol** to attach the zip file, then send:
+
+   > **Add this skill.**
+
+4. Cowork unpacks and places the skill in the right location for you
+5. **Done!** In the same session (or a new one), ask: *"Generate my impact summary report."*
 
 | Version | File | Status |
 |---|---|---|
-| **v27** | [`cowork-roi-report-skill-v27.zip`](cowork-roi-report-skill-v27.zip) | ✅ **Latest version** — recommended |
-| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v26) |
+| **v34** | [`cowork-roi-report-skill-v34.zip`](cowork-roi-report-skill-v34.zip) | ✅ **Latest version** — recommended |
+| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v27) |
 
 ---
 
@@ -37,61 +48,38 @@ The report leads with research-anchored **Time Saved** (conservative / typical /
 
 ![Time Saved hero](images/report-hero.png)
 
-### KPIs & the four Value Pillars
-A **Value at a glance** table crosswalks your work to **Revenue Growth, Cost Reduction, Risk Mitigation, and Transformation**, followed by headline KPIs and the secondary speed multiplier.
+### KPIs
+Headline KPIs — sessions, run tasks, deliverables, active days, expert-equivalent hours — followed by the secondary, rate-independent speed multiplier.
 
-![KPIs and Value Pillars](images/report-kpis.png)
+![KPIs](images/report-kpis.png)
 
 ### Where the time went — by task category
 See where your time went across the research-anchored task categories, each valued at its cited per-task band.
 
 ![Categories breakdown](images/report-categories.png)
 
-### Work by business process
-Your projects, seen two ways — by the **JTBD** they served within their **Business Process**, or by the **Business Value Pillar** they create value in. Same projects, two lenses, all derived from your own footprint at run time.
+### Your projects
+One canonical **Your projects** table lists every project once — group it by **Business Process** or **task Category** in place. Each row carries its **Cowork-fit** grade, roles, hours, and value, all derived from your own footprint at run time.
 
-![Work by business process](images/report-process.png)
+![Your projects](images/report-process.png)
+
+### Cowork-fit — did the work need Cowork?
+Every project gets a **High / Medium / Low** grade from the *single-surface test*: could one in-app Copilot (Excel, Word, Outlook, Teams, chat) have done it end-to-end? A deterministic rule sets a reproducible baseline; an optional LLM review can confirm or adjust it. Each grade's hover shows the reason **and** the method (rule-based / AI-confirmed / AI-reviewed).
+
+### Roles Cowork assembled — with a Projects × Roles heatmap
+The professional roles a billing firm would charge for your work, each linked to a job search, plus a **Projects × Roles heatmap** whose cells reconcile exactly to the role and project totals.
 
 ### Full report sections
 - **Hero** — research-anchored Time Saved (conservative / typical / optimistic) + professional-services value
 - **KPIs** — sessions, run tasks, deliverables, active days, expert-equivalent hours
-- **Value at a glance** — the four Value Pillars with example KPIs
 - **Where the time went** — research-anchored time-savings bars by task category
-- **Roles Cowork assembled** — the professional roles a billing firm would charge for your work, each linked to a job search
-- **Work by business process** — Process ▸ JTBD ▸ Project, toggleable between By-process and Business-Value-Pillar views
-- **Deliverables & the skills behind them**
+- **Your projects** — one table, groupable by Business Process or Category, each row with its Cowork-fit grade, roles, hours, and value
+- **Cowork-fit (H/M/L)** — per-project grade from the single-surface test (rule baseline + optional LLM review); reason and method on hover
+- **Roles Cowork assembled** — the professional roles a billing firm would charge for, each linked to a job search, plus a Projects × Roles heatmap
+- **Deliverables & the skills behind them** (collapsed)
 - **Methodology & glossary** — every band traceable, with clickable research sources
 - **Live hourly-rate control** — recalculates all dollar figures; the speed multiplier is rate-independent
 - **Download PDF** button
-
----
-
-## Installation
-
-### Option 1 — Let Cowork install it for you (easiest)
-
-1. **Download** the latest version: [`cowork-roi-report-skill-v27.zip`](cowork-roi-report-skill-v27.zip) *(no need to unzip — attach it as-is)*
-2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session
-3. **Click the ➕ (plus) symbol** to attach the zip file, then send:
-
-   > **Add this skill.**
-
-4. Cowork unpacks and places the skill in the right location for you
-5. **Done!** In the same session (or a new one), ask: *"Generate my impact summary report."*
-
-### Option 2 — Manual install
-
-1. **Download** the latest version: [`cowork-roi-report-skill-v27.zip`](cowork-roi-report-skill-v27.zip)
-2. **Extract** the zip
-3. **Copy** the `cowork-roi-report/` folder to your Cowork skills directory:
-   ```
-   <OneDrive>/Documents/Cowork/skills/cowork-roi-report/
-   ```
-4. **Done!** Ask Cowork: *"Generate my impact summary report."*
-
-#### Alternative paths
-- Cowork container: `/mnt/user-config/.claude/skills/cowork-roi-report/`
-- Custom skills folder: wherever your Cowork instance reads personal skills from
 
 ---
 
@@ -106,8 +94,8 @@ Once installed, trigger the skill by asking Cowork:
 The skill will:
 1. **Ask** two questions — which period to measure (7, 15, or 30 days) and whether to run once or automate + email a recurring digest
 2. **Harvest** your Cowork session files from OneDrive
-3. **Classify** each session with the deterministic extension-based classifier
-4. **Map** your work to Processes ▸ JTBDs ▸ Projects and the four Value Pillars, aligning to your durable taxonomy registry (align-first, create-if-novel)
+3. **Classify** each session into a task category (deterministic, driven by the Cowork usage taxonomy)
+4. **Map** your work to Business Processes ▸ Projects and grade each project's Cowork-fit, aligning to your durable taxonomy registry (align-first, create-if-novel)
 5. **Compute** research-anchored Time Saved and value
 6. **Render** a beautiful, self-contained HTML report
 
@@ -140,6 +128,8 @@ The **speed multiplier** is a secondary, directional stat: Time Saved divided by
 
 Sources: Stanford-WB, Microsoft Research, NBER, Forrester — all clickable in the report's Glossary.
 
+> **How work is classified.** For how each session is placed into a task category and graded for **Cowork-fit (H/M/L)**, see [`classification-methodology.md`](classification-methodology.md).
+
 ---
 
 ## What's in the Skill
@@ -148,10 +138,9 @@ Sources: Stanford-WB, Microsoft Research, NBER, Forrester — all clickable in t
 cowork-roi-report/
 ├── SKILL.md                     # skill definition + workflow (loaded by Cowork)
 ├── README.md                    # technical documentation
-├── CHANGELOG-v27.md             # latest — Projects × Roles heatmap
-├── CHANGELOG-v26.md             # packaging/size fix so the skill passes plug-in validation
-├── CHANGELOG-v25.md             # tighter classifier + cleaner report layout
-├── CHANGELOG-v5…v24.md          # full version history
+├── CHANGELOG-v34.md             # latest — taxonomy-aligned categories + hybrid (rule + LLM) Cowork-fit
+├── CHANGELOG-v28…v33.md         # Cowork-fit grading + single "Your projects" table
+├── CHANGELOG-v5…v27.md          # full version history
 ├── scripts/
 │   ├── reconcile_taxonomy.py    # align-first/create-if-novel; owner-scoped registry; runs before classify.py
 │   ├── classify.py              # deterministic ext→category classifier
@@ -165,10 +154,11 @@ cowork-roi-report/
 │   ├── process_overrides.json   # per-user session→process map (ships empty `{}`; written to working/ at run time)
 │   └── process_overrides.example.json  # example override map
 ├── references/
-│   ├── map-my-work-playbook.md  # derives your own Processes ▸ JTBDs ▸ Projects (run inline)
+│   ├── map-my-work-playbook.md  # derives your own Business Processes ▸ Projects (run inline)
 │   ├── methodology.md           # detailed bands table + two-clock formulas
-│   ├── classification-reference.md  # extension/category heuristics + raw-harvest schema
-│   └── value-pillars.md         # the four-pillar crosswalk
+│   ├── classification-methodology.md  # how categories + Cowork-fit (H/M/L) are decided
+│   ├── classification-reference.md    # extension/category heuristics + raw-harvest schema
+│   └── value-pillars.md         # the four-pillar crosswalk (reference only)
 └── examples/
     └── sample_sessions.json     # synthetic input (safe to share)
 ```
@@ -198,9 +188,10 @@ python scripts/build_report.py --data working/cowork_roi_data.json --out output/
 
 ## What's new
 
-- **v27** — adds a **Projects × Roles heatmap** to the report (right after the "Roles Cowork assembled" list), with cells that reconcile to the existing roles and project totals. No change to the methodology, categories, bands, or value model. See [`skill/CHANGELOG-v27.md`](skill/CHANGELOG-v27.md).
-- **v26** — a small packaging fix so the skill passes plug-in validation (trimmed `SKILL.md` and its frontmatter under the size limits, with the deeper methodology and classification detail moved into `references/`). No change to the pipeline, categories, bands, or report output. See [`skill/CHANGELOG-v26.md`](skill/CHANGELOG-v26.md).
-- **v25** — a tighter classifier and a cleaner, more legible report layout. See [`skill/CHANGELOG-v25.md`](skill/CHANGELOG-v25.md).
+- **v34** — task categories now follow the **Cowork usage taxonomy** labels, and **Cowork-fit** becomes a rule + LLM-review hybrid (each grade flagged rule-based / AI-confirmed / AI-reviewed). See [`skill/CHANGELOG-v34.md`](skill/CHANGELOG-v34.md).
+- **v32–v33** — taxonomy-driven category assignment and Cowork-fit refinements, plus the new [`classification-methodology.md`](classification-methodology.md) explainer. See [`skill/CHANGELOG-v33.md`](skill/CHANGELOG-v33.md).
+- **v29–v31** — layout overhaul: one canonical **Your projects** table replaces the repeated project lists, deep-dives collapse, and the Value-at-a-glance pillar table is retired. See [`skill/CHANGELOG-v31.md`](skill/CHANGELOG-v31.md).
+- **v28** — adds the per-project **Cowork-fit (H/M/L)** grade via the single-surface test. See [`skill/CHANGELOG-v28.md`](skill/CHANGELOG-v28.md).
 
 Full version history lives in [`skill/`](skill) and [`archive/`](archive).
 

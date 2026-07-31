@@ -211,9 +211,11 @@ EXT2CAT = {
     "pptx": "document", "ppt": "document",
     "png": "document", "jpg": "document", "jpeg": "document",
     "svg": "document", "eps": "document", "gif": "document",
-    # Analysis & research
-    "xlsx": "analysis", "xlsm": "analysis", "xls": "analysis",
-    "csv": "analysis", "tsv": "analysis", "json": "analysis", "parquet": "analysis",
+    # Spreadsheets are CREATED content/data documents ("creating visuals, organizing
+    # files") per the taxonomy table -> document. Analysis is assigned from goal text
+    # ("synthesizing findings, comparing options, briefings"), never from a file type.
+    "xlsx": "document", "xlsm": "document", "xls": "document",
+    "csv": "document", "tsv": "document",
     # Write or debug code
     "html": "code", "htm": "code", "py": "code", "ps1": "code",
     "js": "code", "ts": "code", "sql": "code", "ipynb": "code",
@@ -232,12 +234,12 @@ PRIORITY = ["code", "analysis", "special", "document", "comms", "meeting", "emai
 # keys); only the descriptive vocabulary that routes into them is tightened.
 # ---------------------------------------------------------------------------
 
-# Analysis, research & briefing — "searching org data, synthesizing findings,
-# comparing options, explaining concepts, preparing briefings from multiple sources"
+# Analysis & Research — searching org data, synthesizing findings, comparing
+# options, explaining concepts, preparing briefings from multiple sources.
 ANALYSIS_SIGNALS = (
     "analyz", "analyse", "analysis", "research", "synthes", "investigat",
     "benchmark", "compar", "evaluat", "assess", "audit", "deep dive", "diagnos",
-    "forecast", "roi", "business case", "cost analysis", "quantif", "calculat",
+    "forecast", "roi analysis", "roi report", "business case", "cost analysis", "quantif", "calculat",
     "insight", "trend",
     # taxonomy-derived additions:
     "briefing", "brief on", "search", "org data", "explain", "explaining",
@@ -249,7 +251,7 @@ ANALYTICAL_OBJECTS = (
     "report", "data", "dataset", "findings", "result", "dashboard", "metric",
     "number", "log", "telemetry", "usage", "spreadsheet", "chart", "figure", "source",
 )
-# Code assistance — "writing/debugging code, code review, script generation, code analysis"
+# Write or debug code — writing/debugging code, code review, script generation, code analysis.
 CODE_SIGNALS = (
     "debug", "refactor", " script", "parser", " api", " app ", "application",
     "pipeline", "deploy", "integrat", "function", " bug ", "codebase",
@@ -257,28 +259,33 @@ CODE_SIGNALS = (
     "code review", "script generation", "write code", "writing code",
     "code analysis", "coding",
 )
-# Email side of "Email & communication" — "drafting/replying to emails,
-# summarizing threads, triaging inbox"
+# Email workflows — drafting/replying to emails, summarizing threads, triaging
+# inbox, managing mail (Outlook-centered).
 EMAIL_SIGNALS = (
-    "email", "inbox", "reply", "replying", "e-mail",
-    "triage", "triaging", "thread", "draft email", "drafting email",
+    "email", "inbox", "reply to", "e-mail", "outlook",
+    "draft email", "drafting email", "summarize thread", "mail rule",
+    "triage inbox", "triage email",
 )
-# Communication side of "Email & communication" — "managing Teams messages,
-# communication rules"
+# Communication workflows — the SAME ideas as Email, but centered on Microsoft
+# Teams: synthesizing, posting, triaging and managing across Teams messages and
+# channels (chats, channel posts, replies, announcements, mentions).
 COMMS_SIGNALS = (
     "teams message", "teams chat", "teams channel", "chat message",
-    "post to teams", "communication rule", "notify the team", "announcement",
+    "post to teams", "post to the channel", "post in teams", "channel message",
+    "reply in teams", "teams thread", "summarize the channel", "summarize teams",
+    "triage teams", "manage the channel", "communication rule",
+    "notify the team", "announcement", "@mention", "mention me",
 )
-# Document & content creation — "drafting docs/presentations, editing text,
-# creating visuals, organizing files in OneDrive/SharePoint"
+# Document & content creation — drafting docs/presentations, editing text,
+# creating visuals, organizing files in OneDrive/SharePoint.
 DOC_SIGNALS = (
     "presentation", "deck", "slide", "one-pager", "write-up", "writeup",
     "draft a doc", "drafting doc", "editing text", "edit text", "visual",
     "onedrive", "sharepoint", "organize file", "content creation", "newsletter",
 )
-# Workflow automation — "scheduling calendar events, managing task lists,
-# multi-step M365 workflows, recurring prompts; connectors: Dynamics 365,
-# ADO Boards, Power BI, Fabric, ServiceNow, Salesforce, SAP"
+# Specialized workflows — scheduling calendar events, managing task lists,
+# multi-step M365 workflows, recurring prompts, and connectors (Dynamics 365,
+# ADO Boards, Power BI, Fabric, ServiceNow, Salesforce, SAP).
 SPECIAL_SIGNALS = (
     "workflow automation", "automat", "recurring prompt", "scheduled prompt",
     "schedule prompt", "task list", "multi-step", "multistep", "connector",
@@ -286,8 +293,8 @@ SPECIAL_SIGNALS = (
     "salesforce", " sap ", "schedule calendar", "scheduling calendar",
     "calendar event", "package", "bundle", "skill",
 )
-# Meeting intelligence — "preparing meeting briefings, recapping transcripts,
-# extracting action items, calendar lookups"
+# Meeting workflows — preparing meeting briefings, recapping transcripts,
+# extracting action items, calendar lookups.
 MEETING_SIGNALS = (
     "meeting", "transcript", "recap", "standup", "minutes", "agenda",
     "action item", "calendar lookup", "meeting brief",
@@ -309,6 +316,7 @@ CONTENT_EXT = {
     "loop", "one", "onetoc2",                        # Loop / OneNote
     "png", "jpg", "jpeg", "gif", "svg", "eps",       # images
     "webp", "heic", "bmp", "tif", "tiff",
+    "xlsx", "xlsm", "xls", "csv", "tsv",             # spreadsheets = created content
 }
 
 
@@ -392,7 +400,9 @@ def classify_session(s: dict) -> tuple:
     for c in goal_categories(s.get("goal", "")):
         if c not in cats:
             cats.append(c)
-    if (any(a["ext"] in DATA_EXT for a in inputs) or len(inputs) >= 3) and "analysis" not in cats:
+    # Multi-source synthesis = analysis ("preparing briefings from multiple sources").
+    # A single data-file input is NOT analysis on its own.
+    if len(inputs) >= 3 and "analysis" not in cats:
         cats.append("analysis")
     # Primary-output gate for Document & content creation: keep `document` ONLY
     # when a genuine content artifact (deck / doc / PDF / Loop / image) was
@@ -482,6 +492,8 @@ def main(inp: str, out: str, overrides_path: str = _OVERRIDES_PATH) -> None:
             rec["code_loc"] = s["code_loc"]
         if s.get("runs") is not None:
             rec["runs"] = s["runs"]
+        if s.get("cowork_fit_review") is not None:
+            rec["cowork_fit_review"] = s["cowork_fit_review"]
         if note:
             rec["note"] = note
         classified.append(rec)

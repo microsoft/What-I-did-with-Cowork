@@ -61,22 +61,22 @@ Do not schedule until the user explicitly chooses the automate option in Q2 (the
 
 ### 3. Harvest the user's Cowork sessions (the data source)
 Cowork persists each session's workspace to OneDrive under **`Documents/Cowork/`** — the artifacts are the
-signal (no chat transcript). Harvest **all three** folder layouts (different users/versions sit on different ones):
+signal. Harvest **all three** layouts (users/versions differ):
 - **Task folders** (current): `Documents/Cowork/Tasks/<goal-slug>-<YYYY-MM-DD>/` → `input/`+`output/`
 - **Root goal folders**: `Documents/Cowork/<goal-slug>-<YYYY-MM-DD>/` → `input/`+`output/`
 - **Legacy UUID sessions**: `Documents/Cowork/sessions/<session-uuid>/` → `input/`+`output/`
 
 - `GetDefaultDrive()` → personal OneDrive `drive_id`.
-- **Locate the Cowork folder — do NOT assume the name** (may be suffixed/localized: `Cowork 2`, `Colaborar`, …).
-  Try `/Documents/Cowork`; on 404 list `/Documents` and pick the child starting `Cowork` (prefer exact, else
-  highest-numbered), else drive-root `/Cowork`, else ask once. Carry the resolved name forward.
-- **Enumerate all three layouts** (`Tasks/`, root goal-folders, `sessions/`) and **follow pagination**
-  (`@odata.nextLink`) to exhaustion — a page caps at ~20–100 items.
+- **Locate the Cowork folder — do NOT assume the name** (may be `Cowork 2`, `Colaborar`, …). Try
+  `/Documents/Cowork`; on 404 list `/Documents`, pick the child starting `Cowork` (prefer exact, else highest N),
+  else `/Cowork`, else ask once. Carry the resolved name forward.
+- **Enumerate all three layouts** (`Tasks/`, root goal-folders, `sessions/`) and **follow pagination** to
+  exhaustion — a page caps at ~20–100 items.
 
-- **Allow-list by app id.** Count a folder/artifact ONLY when its `createdBy.application.id` is the **Cowork app
-  id `6ab48b67-cd74-4ad4-81af-5932984589be`** (robust across users/tenants) — never key on folder *names*.
-- **NEVER enumerate `Documents/Apps/…`** — that tree is the M365 Copilot "Scout" product (Graph app
-  `99fa64eb-…`), not Cowork. Skipping it excludes Scout for every user with no name list to maintain.
+- **Allow-list by app id.** Count a folder/artifact ONLY when `createdBy.application.id` = the **Cowork app id
+  `6ab48b67-cd74-4ad4-81af-5932984589be`** — never key on folder *names*.
+- **NEVER enumerate `Documents/Apps/…`** — that's the M365 Copilot "Scout" product (Graph app
+  `99fa64eb-…`), not Cowork.
 
 - Keep session folders whose `createdDateTime`/`lastModifiedDateTime` falls in the window.
 - For each kept session, `GetDriveChildren` into `output/` (and `input/`) to collect filenames, extensions and
@@ -110,15 +110,7 @@ goal collapsed to the same hours — **never assign the same default categories 
 a clearly analytical deliverable (a synthesis report saved as `.docx/.pptx`) to `analysis`, but the extension
 map is the default. **Be conservative — credibility matters more than a big number.**
 
-**Goal-text signals (v25) — the classifier also reads the goal phrase, not just the file extension.**
-Alongside the extension map, `classify.py` scans each goal against signal vocabularies derived from the
-Cowork usage taxonomy table (its Description/Examples column). This lets a session land in the right bucket
-even when it saved no telltale file: `document` (drafting docs/decks, editing text, creating visuals,
-organizing files in OneDrive/SharePoint), `comms` (Teams messages, communication rules), and `special`
-(workflow automation, recurring/scheduled prompts, task lists, multi-step M365 flows, connectors: Dynamics
-365, ADO Boards, Power BI, Fabric, ServiceNow, Salesforce, SAP) are now detectable from goal text — as
-`analysis`, `code`, `email`, `meeting` already were. The 8 categories, the extension map, the 2-per-session
-cap and the PRIORITY tie-break are unchanged; the category path stays fully deterministic (no LLM).
+**Category choice follows the Cowork usage taxonomy (Description/Examples).** `classify.py` is description-driven: **Analysis & Research** only from goal text describing analytical work (synthesize, compare, brief from multiple sources), NOT a file type; a built **spreadsheet/tracker is Document & content creation**, not analysis. **Email workflows** (Outlook) and **Communication workflows** (Teams messages/channels) are the same ideas on different surfaces; Specialized, Meeting, Code and General match the table wording. The 8 labels, 2-per-session cap, PRIORITY tie-break and document primary-output gate are unchanged; the category path is deterministic. Full category + Cowork-fit rules: **[references/classification-methodology.md](references/classification-methodology.md)**.
 
 Extension→category heuristics, counting discipline, and the exact `working/cowork_raw.json`
 schema `classify.py` consumes are in **[references/classification-reference.md](references/classification-reference.md)**.
@@ -171,11 +163,7 @@ Nothing user-specific is committed to the skill folder; overrides are scratch un
 The report's **Work by business process** section pivots on Process: each process is an accordion with
 its subtotal (**sessions · hours · value · % of time**), the distinct **JTBD(s)** it served, and the
 **projects** beneath it. A secondary **By pillar** toggle groups the same projects by value pillar.
-**(v25 layout:** primary lens, rendered directly **under the KPI cards** in a quiet panel (single-caret
-rows, whole row clickable). A companion **Projects by category** section folds the same projects into a
-collapsible bucket per category; the former task-category and Roles **bar charts are removed** (fold + clean role
-list). A **Projects × Roles heatmap** follows the Roles list — projects on Y (scrollable), roles on X
-capped at top-7 (+ Other); each cell = that role's expert-hours in that project.**)**
+**(Report layout:** a single **"Your projects" table** is the one place projects are listed, sitting under the KPI cards. A single **Group-by dropdown** (Process/Category) regroups rows in place, read once; rows render server-side (never blank). Columns: Project · Cowork-fit · Hours · Value. Each row carries a **Cowork-fit dot** (single-surface test): **H green** = build/automation, **any Specialized workflow**, or cross-surface; **M yellow** = borderline; **L red** = one surface. **Two-layer hybrid:** a deterministic rule sets the baseline, then an **LLM review** may confirm/adjust each grade (a keyword rule can’t truly judge capability). Each dot is flagged **rule-based**/**AI-reviewed**; hover shows reason + method. The **Roles × projects heatmap** replaces the flat role list under "Roles Cowork assembled for me"; only **Deliverables** stays behind a toggle.**)**
 
 > **Memory-first + packaging:** each run locates the user's own owner-scoped registry and aligns to it (only
 > novel work adds a name). NEVER bundle the registry, any `cowork-process-registry*.json`, or a populated

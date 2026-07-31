@@ -175,6 +175,124 @@ def load_credits_lookup():
     except Exception:
         return {}
 
+
+# ---------------------------------------------------------------------------
+# Cowork-fit - the "single-surface test" (v28)
+# Guiding question: could a single surface-specific / in-app Copilot have done
+# this end-to-end? If yes, it did not need Cowork.
+#   * build/package a skill, code, HTML app, or an EXECUTED automation/connector
+#       /browser run  -> no in-app surface exists  -> H (Cowork-only)
+#   * >= 2 in-app surfaces (cross-surface chain, e.g. Outlook + Excel)
+#                                                   -> H (no single Copilot spans apps)
+#   * lightweight Cowork-platform op (install/share/schedule a skill or prompt)
+#                                                   -> M
+#   * exactly 1 in-app surface                      -> L (name the surface)
+# Deterministic - no LLM. Signals come straight from the harvest.
+# ---------------------------------------------------------------------------
+CF_IN_APP = {"xlsx":"Excel","xlsm":"Excel","xls":"Excel","csv":"Excel","tsv":"Excel",
+             "docx":"Word","doc":"Word","pdf":"Word","rtf":"Word",
+             "pptx":"PowerPoint","ppt":"PowerPoint"}
+CF_CODE_EXT  = {"py","ps1","js","ts","ipynb","sh","html","htm"}
+CF_BUILD_EXT = {"zip"}
+CF_CONNECTORS = ("dynamics 365","ado boards","power bi","fabric","servicenow","salesforce"," sap ")
+CF_SURFACE_ORDER = ["Outlook","Excel","Word","PowerPoint","Teams"]
+# Roles that are NOT linked to a business-value-analytics job -> supporting signal
+CF_OUT_OF_DOMAIN_ROLES = {"Software Engineer","DevOps Engineer","Frontend Developer",
+                          "Backend Developer","Solutions Architect","Data Engineer",
+                          "QA Engineer","Security Engineer","UX Designer"}
+
+def cf_surfaces(goal, outputs, cats):
+    """The in-app Copilot surfaces a piece of work would touch (Outlook/Excel/Word/PPT/Teams)."""
+    g = " " + (goal or "").lower() + " "
+    surfaces = set()
+    for o in outputs:
+        e=_ext(o).lower()
+        if e in CF_IN_APP: surfaces.add(CF_IN_APP[e])
+    if ("Email workflows" in cats) or ("email" in cats) or any(w in g for w in ("email","inbox","reply","triage","e-mail")):
+        surfaces.add("Outlook")
+    if ("Meeting workflows" in cats) or ("Communication workflows" in cats) or ("meeting" in cats) or ("comms" in cats) or any(w in g for w in ("meeting","transcript","recap","teams","standup")):
+        surfaces.add("Teams")
+    if any(w in g for w in ("deck","slide","presentation","chart","visual","layout")):
+        surfaces.add("PowerPoint")
+    return surfaces
+
+def cowork_fit(goal, outputs, inputs, cats, roles, extra_surfaces=None, review=None):
+    g = " " + (goal or "").lower() + " "
+    out_ext = [_ext(o).lower() for o in outputs]
+    conversational = (len(outputs) == 0)
+
+    # -- Cowork-only: builds/packages a skill, code, or HTML app --
+    build = (any(e in CF_BUILD_EXT for e in out_ext)
+             or any(e in CF_CODE_EXT for e in out_ext)
+             or (("skill" in g or "package" in g or "bundle" in g) and ("build" in g or "create" in g)))
+    # -- Cowork-only: an EXECUTED automation / connector / browser run --
+    executed = ((("browser automation" in g) or ("connector" in g) or ("integrat" in g)
+                 or any(c in g for c in CF_CONNECTORS) or ("sweep" in g))
+                and (("run" in g) or ("sweep" in g) or ("execute" in g) or len(outputs) > 0))
+    # -- >5 sources synthesized is also inherently agentic --
+    big_synth = len(inputs) > 5
+    # -- lightweight Cowork-platform op (setup/config, no real artifact) --
+    platform_op = (any(v in g for v in ("install","set up","setup","schedule","register","enable"))
+                   or (" add " in g) or ("share " in g and "sharing" not in g) or ("attach" in g)) \
+                  and any(o in g for o in ("skill","prompt","workspace","automation","connector")) \
+                  and conversational
+
+    # -- in-app surfaces the work would touch (this session + any sibling session that
+    #    produced the SAME deliverable, so a two-step effort split across sessions
+    #    still reads as cross-surface). --
+    surfaces = cf_surfaces(goal, outputs, cats) | set(extra_surfaces or [])
+
+    # -- Specialized workflow = Cowork-native (automation, connectors, scheduled/recurring
+    #    prompts, skill build/packaging). Per methodology, this is a High Cowork match. --
+    is_special = ("Specialized workflows" in cats) or ("special" in cats)
+
+    ood = [r for r in (roles or []) if r in CF_OUT_OF_DOMAIN_ROLES]
+
+    # -- decide (order matters). `why` is a full, project-specific sentence shown on hover. --
+    if build or executed or big_synth:
+        grade, label = "H", "Cowork-only"
+        why = ("Cowork built or packaged a skill/app here — no in-app Copilot can do that." if build else
+               "Cowork ran a cross-system automation here — no in-app Copilot can do that." if executed else
+               "Cowork synthesized %d sources at once — beyond a single-app Copilot." % len(inputs))
+    elif is_special:
+        grade, label = "H", "Specialized workflow"
+        why = ("A specialized workflow (automation, connector, scheduled/recurring prompt, or skill "
+               "build) — these are Cowork-native; no in-app Copilot runs them.")
+    elif len(surfaces) >= 2:
+        grade = "H"
+        surf=" + ".join([x for x in CF_SURFACE_ORDER if x in surfaces])
+        label = "Needs " + surf + " Copilot"
+        why = "This spans %s — no single Copilot works across apps, so it needs Cowork." % surf
+    elif len(surfaces) == 1:
+        only = next(iter(surfaces))
+        grade, label = "L", "%s Copilot could do it" % only
+        why = "This is all in one app (%s) — %s Copilot alone would have covered it." % (only, only)
+    elif conversational:
+        grade, label = "L", "Copilot chat could do it"
+        why = "A quick conversational task with no build — Copilot chat would have covered it."
+    else:
+        grade, label = "M", "Mostly one surface"
+        why = "Borderline — largely a single-surface task that Cowork made a bit easier."
+
+    result = {"grade": grade, "label": label, "why": why, "method": "rule",
+              "surfaces": [x for x in CF_SURFACE_ORDER if x in surfaces],
+              "out_of_domain_roles": ood}
+    # -- LLM-review layer -----------------------------------------------------
+    # The deterministic grade above is a fast, reproducible PROXY for the real
+    # question ("could one in-app Copilot have done this?"). That question is a
+    # capability judgment, so the agent may review each project and pass a
+    # `review = {"grade": "H|M|L", "why": "..."}`. When present it OVERRIDES the
+    # rule grade and is flagged method="AI-reviewed"; the rule grade is kept as
+    # rule_grade for transparency. Absent a review, the rule grade stands.
+    if review and review.get("grade") in ("H", "M", "L"):
+        result["rule_grade"] = grade
+        result["grade"] = review["grade"]
+        if review.get("why"): result["why"] = review["why"]
+        if review.get("label"): result["label"] = review["label"]
+        result["method"] = "AI-reviewed" if review["grade"] != grade else "AI-confirmed"
+    return result
+
+
 def main(inp,out):
     d=json.load(open(inp)); meta=d["meta"]; sessions=d["sessions"]
     rate=meta.get("hourly_rate",72)
@@ -193,6 +311,15 @@ def main(inp,out):
     skilldeliv=collections.Counter()    # how many deliverables a skill helped produce
     deliverables=[]                     # per-output: name, type, skills, hours, value
     inv=collections.defaultdict(list)   # artifact inventory: type label -> [items]
+
+    # ---- Cross-session surface map: a deliverable built across two sessions (e.g. find the
+    #      emails in one, build the Excel tracker in another) should read as cross-surface in
+    #      BOTH. Map each deliverable basename -> the union of surfaces any session touched. ----
+    deliv_surfaces=collections.defaultdict(set)
+    for _s in sessions:
+        _surf=cf_surfaces(_s.get("goal",""), _s.get("outputs",[]) or [], _s.get("tasks",[]) or [])
+        for _o in (_s.get("outputs",[]) or []):
+            deliv_surfaces[art_base(_name(_o)).lower()] |= _surf
 
     for s in sessions:
         sid=s["id"]; date=s["date"]; hour=int(s.get("hour",12))
@@ -269,6 +396,9 @@ def main(inp,out):
                       "n_tasks":int(sum(runs.values())),"artifacts":[_name(a) for a in outputs],
                       "speed_x":spd,"exec_min":assist,
                       "professional_roles":prof_roles,
+                      "cowork_fit":cowork_fit(goal,outputs,inputs,cats,prof_roles,
+                          extra_surfaces=set().union(*[deliv_surfaces.get(art_base(_name(o)).lower(),set()) for o in outputs]) if outputs else set(),
+                          review=s.get("cowork_fit_review")),
                       "conversational":(len(outputs)==0)})
         if not outputs: conv+=1
 
@@ -344,6 +474,10 @@ def main(inp,out):
      "deliverables":sorted(deliverables,key=lambda x:-x["hours"]),
      "heatmap":[{"date":dd,"hour":h,"count":c} for (dd,h),c in sorted(heat.items())],
      "goals":sorted(goals,key=lambda g:-g["minutes_typical"]),
+     "cowork_fit_summary":{
+         "H":sum(1 for g in goals if g["cowork_fit"]["grade"]=="H"),
+         "M":sum(1 for g in goals if g["cowork_fit"]["grade"]=="M"),
+         "L":sum(1 for g in goals if g["cowork_fit"]["grade"]=="L")},
      "tasks":tasks,"artifacts":artifacts,
     }
     json.dump(payload,open(out,"w"),indent=1)
