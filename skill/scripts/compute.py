@@ -176,6 +176,27 @@ def load_credits_lookup():
         return {}
 
 
+# Live-session telemetry: total interactions per session (user + assistant turns).
+# Present only when the telemetry hook recorded the session; keyed by id + 8-char id.
+TELEMETRY_LOG = os.path.join(os.path.dirname(CREDITS_LOG), "cowork-session-telemetry.json") \
+    if 'CREDITS_LOG' in dir() else "/mnt/user-config/.claude/cowork-session-telemetry.json"
+def load_interactions_lookup():
+    try:
+        with open(TELEMETRY_LOG) as f:
+            d=json.load(f)
+        out={}
+        for k,v in (d or {}).items():
+            if not isinstance(v,dict): continue
+            t=v.get("turns",{}) or {}
+            tot=(t.get("user",0) or 0)+(t.get("assistant",0) or 0)
+            if tot:
+                for key in (v.get("id"), v.get("session_id"), k):
+                    if key: out[str(key)]=tot; out[str(key)[:8]]=tot
+        return out
+    except Exception:
+        return {}
+
+
 # ---------------------------------------------------------------------------
 # Cowork-fit - the "single-surface test" (v28)
 # Guiding question: could a single surface-specific / in-app Copilot have done
@@ -215,6 +236,17 @@ def cf_surfaces(goal, outputs, cats):
     if any(w in g for w in ("deck","slide","presentation","chart","visual","layout")):
         surfaces.add("PowerPoint")
     return surfaces
+
+# Grade-appropriate fallback labels used when an LLM review CHANGES the grade but
+# supplies no label of its own. Without this, an upgraded High keeps the rule's
+# original single-app label ("<app> Copilot could do it") and the hover then reads
+# "<app> Copilot could do it: <High justification>" — which undercuts the High.
+# A High label must justify the NEED for Cowork; Medium/Low state the lighter fit.
+CF_REVIEW_LABELS = {
+    "H": "Needs Cowork",
+    "M": "Borderline fit",
+    "L": "Single-app Copilot could do it",
+}
 
 def cowork_fit(goal, outputs, inputs, cats, roles, extra_surfaces=None, review=None):
     g = " " + (goal or "").lower() + " "
@@ -285,11 +317,18 @@ def cowork_fit(goal, outputs, inputs, cats, roles, extra_surfaces=None, review=N
     # rule grade and is flagged method="AI-reviewed"; the rule grade is kept as
     # rule_grade for transparency. Absent a review, the rule grade stands.
     if review and review.get("grade") in ("H", "M", "L"):
+        new_grade = review["grade"]
         result["rule_grade"] = grade
-        result["grade"] = review["grade"]
+        result["grade"] = new_grade
         if review.get("why"): result["why"] = review["why"]
-        if review.get("label"): result["label"] = review["label"]
-        result["method"] = "AI-reviewed" if review["grade"] != grade else "AI-confirmed"
+        if review.get("label"):
+            result["label"] = review["label"]
+        elif new_grade != grade:
+            # Grade moved — regenerate the label so it matches the NEW grade. An
+            # upgraded High must justify Cowork, never inherit the rule's
+            # "<app> Copilot could do it" single-app label.
+            result["label"] = CF_REVIEW_LABELS[new_grade]
+        result["method"] = "AI-reviewed" if new_grade != grade else "AI-confirmed"
     return result
 
 
@@ -299,6 +338,7 @@ def main(inp,out):
     win=meta.get("window",{"label":"Window","from":"","to":"","months":1})
     cost_lookup=load_cost_lookup()
     credits_lookup=load_credits_lookup()
+    interactions_lookup=load_interactions_lookup()
 
     tasks=[]; goals=[]; afiles=[]; artifacts=[]
     catmin=collections.Counter(); ccount=collections.Counter()
@@ -396,6 +436,9 @@ def main(inp,out):
                       "n_tasks":int(sum(runs.values())),"artifacts":[_name(a) for a in outputs],
                       "speed_x":spd,"exec_min":assist,
                       "professional_roles":prof_roles,
+                      "n_inputs":len(inputs),"n_outputs":len(outputs),
+                      "skills":[x for x in (s.get("skills") or []) if x],
+                      "total_interactions":interactions_lookup.get(str(sid)) or interactions_lookup.get(str(sid)[:8]),
                       "cowork_fit":cowork_fit(goal,outputs,inputs,cats,prof_roles,
                           extra_surfaces=set().union(*[deliv_surfaces.get(art_base(_name(o)).lower(),set()) for o in outputs]) if outputs else set(),
                           review=s.get("cowork_fit_review")),

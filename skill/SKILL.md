@@ -75,8 +75,7 @@ signal. Harvest **all three** layouts (users/versions differ):
 
 - **Allow-list by app id.** Count a folder/artifact ONLY when `createdBy.application.id` = the **Cowork app id
   `6ab48b67-cd74-4ad4-81af-5932984589be`** — never key on folder *names*.
-- **NEVER enumerate `Documents/Apps/…`** — that's the M365 Copilot "Scout" product (Graph app
-  `99fa64eb-…`), not Cowork.
+- **NEVER enumerate `Documents/Apps/…`** — that tree is M365 Copilot "Scout" (Graph app `99fa64eb-…`), not Cowork.
 
 - Keep session folders whose `createdDateTime`/`lastModifiedDateTime` falls in the window.
 - For each kept session, `GetDriveChildren` into `output/` (and `input/`) to collect filenames, extensions and
@@ -85,10 +84,7 @@ signal. Harvest **all three** layouts (users/versions differ):
   file-timestamp spans (leave null; prefer telemetry). Fold supporting files (screenshots, variant HTML,
   READMEs, lock files) into the session's primary deliverable. Keep output-less sessions (empty `outputs` →
   `classify.py` tags `general`).
-- **Live-session telemetry.** `mine_session.py --log /mnt/user-config/.claude/cowork-session-telemetry.json`
-  logs each session's measured `exec_min`, tool intensity and artifacts. In the harvest, **merge in any session
-  id not covered by a Cowork folder** (`has_folder:false`, `outputs:[]`); prefer telemetry `exec_min` where both
-  exist. Forward-only — cannot backfill sessions predating the hook.
+- **Live-session telemetry.** `mine_session.py --log …/cowork-session-telemetry.json` logs each session's `exec_min`, tool intensity and artifacts. In the harvest, **merge in any session id not covered by a Cowork folder** (`has_folder:false`, `outputs:[]`); prefer telemetry `exec_min` where both exist. Forward-only.
 
 ### 4. Classify each session into run tasks (the methodology)
 A **session** contains one or more **run tasks**; each run task maps to exactly one of the eight categories
@@ -110,7 +106,7 @@ goal collapsed to the same hours — **never assign the same default categories 
 a clearly analytical deliverable (a synthesis report saved as `.docx/.pptx`) to `analysis`, but the extension
 map is the default. **Be conservative — credibility matters more than a big number.**
 
-**Category choice follows the Cowork usage taxonomy (Description/Examples).** `classify.py` is description-driven: **Analysis & Research** only from goal text describing analytical work (synthesize, compare, brief from multiple sources), NOT a file type; a built **spreadsheet/tracker is Document & content creation**, not analysis. **Email workflows** (Outlook) and **Communication workflows** (Teams messages/channels) are the same ideas on different surfaces; Specialized, Meeting, Code and General match the table wording. The 8 labels, 2-per-session cap, PRIORITY tie-break and document primary-output gate are unchanged; the category path is deterministic. Full category + Cowork-fit rules: **[references/classification-methodology.md](references/classification-methodology.md)**.
+**Category choice follows the Cowork usage taxonomy (Description/Examples).** `classify.py` is description-driven: **Analysis & Research** only from analytical goal text (synthesize, compare, brief from multiple sources), NOT a file type; a built **spreadsheet is Document & content creation**, not analysis. **Email workflows** (Outlook) and **Communication workflows** (Teams) are the same ideas on different surfaces. The 8 labels, 2-per-session cap, PRIORITY tie-break and document output-gate are unchanged; deterministic. Full rules: **[references/classification-methodology.md](references/classification-methodology.md)**.
 
 Extension→category heuristics, counting discipline, and the exact `working/cowork_raw.json`
 schema `classify.py` consumes are in **[references/classification-reference.md](references/classification-reference.md)**.
@@ -163,7 +159,7 @@ Nothing user-specific is committed to the skill folder; overrides are scratch un
 The report's **Work by business process** section pivots on Process: each process is an accordion with
 its subtotal (**sessions · hours · value · % of time**), the distinct **JTBD(s)** it served, and the
 **projects** beneath it. A secondary **By pillar** toggle groups the same projects by value pillar.
-**(Report layout:** a single **"Your projects" table** is the one place projects are listed, sitting under the KPI cards. A single **Group-by dropdown** (Process/Category) regroups rows in place, read once; rows render server-side (never blank). Columns: Project · Cowork-fit · Hours · Value. Each row carries a **Cowork-fit dot** (single-surface test): **H green** = build/automation, **any Specialized workflow**, or cross-surface; **M yellow** = borderline; **L red** = one surface. **Two-layer hybrid:** a deterministic rule sets the baseline, then an **LLM review** may confirm/adjust each grade (a keyword rule can’t truly judge capability). Each dot is flagged **rule-based**/**AI-reviewed**; hover shows reason + method. The **Roles × projects heatmap** replaces the flat role list under "Roles Cowork assembled for me"; only **Deliverables** stays behind a toggle.**)**
+**(Report layout:** a single **"Your projects" table** is the one place projects are listed, sitting under the KPI cards. A single **Group-by dropdown** (Process/Category) regroups rows in place, read once; rows render server-side (never blank). Columns: Project · Cowork-fit · Hours · Value. Each row carries a **Cowork-fit dot** (single-surface test): **H green** = build/automation, **any Specialized workflow**, or cross-surface; **M yellow** = borderline; **L red** = one surface. **Two-layer hybrid:** a deterministic rule sets the baseline, then an **LLM review** may confirm/adjust each grade (a keyword can’t truly judge capability). Each dot is flagged rule-based/AI-reviewed; hover shows reason + method. The **Roles × projects heatmap** replaces the flat role list under "Roles Cowork assembled for me"; only Deliverables stays behind a toggle.**)**
 
 > **Memory-first + packaging:** each run locates the user's own owner-scoped registry and aligns to it (only
 > novel work adds a name). NEVER bundle the registry, any `cowork-process-registry*.json`, or a populated
@@ -173,14 +169,12 @@ its subtotal (**sessions · hours · value · % of time**), the distinct **JTBD(
 ### 5. Compute & render (bundled scripts — no hand arithmetic)
 - `python scripts/compute.py --in working/cowork_sessions.json --out working/cowork_roi_data.json`
 - `python scripts/build_report.py --data working/cowork_roi_data.json --out output/cowork-roi-report.html`
-- Verify: `Glob output/cowork-roi-report.html`. If missing, locate and move into `output/`.
-- **Run each pipeline script as its own command** — never append an inline schema-guessing `python -c`; a wrong
-  guess exits non-zero and marks the whole step Failed even when the script succeeded. Trust each script's printed
-  summary; inspect output with a separate defensive read.
+- Verify: `Glob output/cowork-roi-report.html`; if missing, locate + move into `output/`.
+- **CSV export is OPT-IN** (extra step) — don't generate by default; offer it in step 6 with the estimate (`scripts/to_csv.py --estimate`). On the user's yes: `python scripts/to_csv.py --data working/cowork_roi_data.json --out output/cowork-sessions.csv` (one row/session, atomic grain, pipe-delimited, UTF-8 BOM, Cowork-fit columns).
+- **Run each pipeline script as its own command** — never append an inline schema-guessing `python -c` (a wrong guess exits non-zero and marks the whole step Failed). Trust each script's printed summary.
 
 ### 6. Show highlights & verify
-Present a short highlights summary (or `render_ui` card): speed multiplier, expert-equivalent hours,
-value, top 3 categories and goals. Tell the user the report is saved to their files.
+Present a short highlights summary (or `render_ui` card): speed multiplier, expert-equivalent hours, value, top 3 categories/goals. Tell the user the HTML report is saved. Then **offer the optional session CSV** with its estimated credit cost (`scripts/to_csv.py --estimate`; the script itself is ~0 credits — local compute — so the estimate is the one extra agent step). Generate only if the user opts in.
 
 ### 7. Automate (only if the user chose it in Q2)
 `SetupScheduledPrompt` with `execution_mode="inline"`, frequency **Day**, **interval = N** (7/15/30), hours
@@ -196,31 +190,30 @@ Other recipient only if named.
 ---
 
 ## Methodology (summary)
-The report applies each category's research-anchored **Typical** minutes-saved band (Low/High form the
-published range); an **expert clock** (Σ bands + read + authoring) vs a modeled **assisted clock** yields the
-**speed multiplier**, and **value** = expert-hours × rate. No ROI/seat-cost figure (credit data unavailable).
-Full bands table, per-category sources, and the two-clock formulas: **[references/methodology.md](references/methodology.md)**.
-`compute.py` holds the authoritative constants — never hand-compute.
+Each category's research-anchored **Typical** band (Low/High = range); an **expert clock** vs a modeled
+**assisted clock** yields the **speed multiplier**; **value** = expert-hours × rate. No ROI/seat figure.
+Bands table + sources + two-clock formulas: **[references/methodology.md](references/methodology.md)**.
+`compute.py` holds the constants — never hand-compute.
 
 ## Guardrails
-- **No fabricated work.** Every run task traces to a real session/artifact. If a category has zero artifacts, show zero — never invent.
-- **Conservative counting.** Cap ~2 tasks/session; fold supporting files into the primary task. Prefer credible over impressive.
-- **No hand arithmetic.** All numbers come from `compute.py`.
-- **Privacy.** Show artifact filenames and short goal phrases only — never file contents.
-- **Per-user memory — never leak it.** The taxonomy registry is owner-scoped and owner-stamped;
-  `reconcile_taxonomy.py` ignores any file that isn't the invoking user's. NEVER bundle the registry,
-  any `cowork-process-registry*.json`, or a populated `process_overrides.json` when packaging/sharing
-  the skill — overrides ship as `{}` and live under `working/` at runtime.
-- **Send/automate only on approval.** Show the report first; only schedule or email after the user opts in (Q2).
-- **Fail open.** If the OneDrive Cowork folder is missing/404, note it and ask for the folder name rather than aborting.
+- **No fabricated work.** Every run task traces to a real session/artifact; zero-artifact categories show zero.
+- **Conservative counting.** Cap ~2 tasks/session; fold supporting files into the primary. Prefer credible over impressive.
+- **No hand arithmetic.** All numbers from `compute.py`.
+- **Privacy.** Show artifact filenames and short goal phrases only; never file contents.
+- **Per-user memory — never leak it.** The taxonomy registry is owner-scoped; `reconcile_taxonomy.py`
+  ignores any non-owner file. NEVER bundle the registry, any `cowork-process-registry*.json`, or a
+  populated `process_overrides.json` — overrides ship as `{}`, live under `working/` at runtime.
+- **Send/automate only on approval.** Show the report first; schedule or email only after the user opts in (Q2).
+- **Fail open.** If the Cowork folder is missing/404, note it and ask for the folder name rather than aborting.
 
 ## Bundled files
-- `scripts/mine_session.py` — telemetry: measured run time, tool intensity, artifacts per session.
-- `scripts/reconcile_taxonomy.py` — per-user taxonomy memory (align-first, create-if-novel); runs BEFORE `classify.py`; takes `--owner`.
-- `scripts/classify.py` — deterministic ext→category classifier; reads `--overrides`; emits the schema `compute.py` consumes.
-- `scripts/compute.py` — research-anchored bands + two-clock model → payload JSON (Process rollup carries `pct_time`).
+- `scripts/mine_session.py` — telemetry: run time, tool intensity, artifacts per session.
+- `scripts/reconcile_taxonomy.py` — per-user taxonomy memory (align-first, create-if-novel); runs before `classify.py`; `--owner`.
+- `scripts/classify.py` — deterministic ext→category classifier; reads `--overrides`; emits `compute.py`’s input schema.
+- `scripts/compute.py` — research-anchored bands + two-clock model → payload JSON.
 - `scripts/build_report.py` — renders the single-file HTML (Process-anchored work-by-process, projects-by-category, glossary, live rate, PDF).
+- `scripts/to_csv.py` — **opt-in** tidy CSV export (one row/session, atomic grain, Cowork-fit columns); `--estimate` prints its credit cost (~0; local compute).
 
 ## Durable files (outside the skill, persist across sessions — PER-USER, never bundled)
-- `/mnt/user-config/.claude/cowork-process-registry.<userkey>.json` — the user's **own** owner-stamped taxonomy memory (Processes + Projects + JTBDs); `<userkey>` from email, on the per-user mount. Read/aligned/persisted by `reconcile_taxonomy.py` each run; any file whose `owner` ≠ invoking user is ignored. Member/aggregated skills use the same scheme.
+- `/mnt/user-config/.claude/cowork-process-registry.<userkey>.json` — the user's **own** owner-stamped taxonomy memory (Processes + Projects + JTBDs); `<userkey>` from email, on the per-user mount. Read/aligned/persisted by `reconcile_taxonomy.py` each run; non-owner files ignored. Member/aggregated skills use the same scheme.
 - `/mnt/user-config/.claude/cowork-session-telemetry.json` · `…-credits.json` · `…-session-costs.json` — measured run-time / credit / cost logs (optional).

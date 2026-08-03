@@ -25,7 +25,7 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 
 **Let Cowork install it for you (easiest):**
 
-1. **Download** the latest version: [`cowork-roi-report-skill-v34.zip`](cowork-roi-report-skill-v34.zip) *(no need to unzip — attach it as-is)*
+1. **Download** the latest version: [`cowork-roi-report-skill-v37.zip`](cowork-roi-report-skill-v37.zip) *(no need to unzip — attach it as-is)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session
 3. **Click the ➕ (plus) symbol** to attach the zip file, then send:
 
@@ -36,8 +36,8 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 
 | Version | File | Status |
 |---|---|---|
-| **v34** | [`cowork-roi-report-skill-v34.zip`](cowork-roi-report-skill-v34.zip) | ✅ **Latest version** — recommended |
-| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v27) |
+| **v37** | [`cowork-roi-report-skill-v37.zip`](cowork-roi-report-skill-v37.zip) | ✅ **Latest version** — recommended |
+| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v34) |
 
 ---
 
@@ -80,6 +80,7 @@ The professional roles a billing firm would charge for your work, each linked to
 - **Methodology & glossary** — every band traceable, with clickable research sources
 - **Live hourly-rate control** — recalculates all dollar figures; the speed multiplier is rate-independent
 - **Download PDF** button
+- **Optional CSV export** — a tidy, one-row-per-session dataset for Excel or downstream analysis
 
 ---
 
@@ -97,7 +98,7 @@ The skill will:
 3. **Classify** each session into a task category (deterministic, driven by the Cowork usage taxonomy)
 4. **Map** your work to Business Processes ▸ Projects and grade each project's Cowork-fit, aligning to your durable taxonomy registry (align-first, create-if-novel)
 5. **Compute** research-anchored Time Saved and value
-6. **Render** a beautiful, self-contained HTML report
+6. **Render** a beautiful, self-contained HTML report and offer an optional session-level CSV export
 
 ---
 
@@ -138,14 +139,16 @@ Sources: Stanford-WB, Microsoft Research, NBER, Forrester — all clickable in t
 cowork-roi-report/
 ├── SKILL.md                     # skill definition + workflow (loaded by Cowork)
 ├── README.md                    # technical documentation
-├── CHANGELOG-v34.md             # latest — taxonomy-aligned categories + hybrid (rule + LLM) Cowork-fit
-├── CHANGELOG-v28…v33.md         # Cowork-fit grading + single "Your projects" table
+├── CHANGELOG-v37.md             # latest — consistent labels when AI review changes Cowork-fit
+├── CHANGELOG-v35.md             # session-level CSV export
+├── CHANGELOG-v28…v34.md         # Cowork-fit grading + single "Your projects" table
 ├── CHANGELOG-v5…v27.md          # full version history
 ├── scripts/
 │   ├── reconcile_taxonomy.py    # align-first/create-if-novel; owner-scoped registry; runs before classify.py
 │   ├── classify.py              # deterministic ext→category classifier
 │   ├── compute.py               # applies the methodology → payload JSON (now with pct_time)
 │   ├── build_report.py          # renders the self-contained HTML report
+│   ├── to_csv.py                # exports one analysis-ready row per session
 │   ├── mine_session.py          # mines the live session transcript (telemetry hook)
 │   ├── statusline_cost.py       # optional status-line cost helper
 │   ├── apqc_taxonomy.json       # generic APQC fallback business-process taxonomy
@@ -173,6 +176,7 @@ The **durable taxonomy memory** is a per-user, owner-scoped registry (`~/.claude
 python scripts/classify.py     --in working/cowork_raw.json      --out working/cowork_sessions.json
 python scripts/compute.py      --in working/cowork_sessions.json --out working/cowork_roi_data.json
 python scripts/build_report.py --data working/cowork_roi_data.json --out output/cowork-roi-report.html
+python scripts/to_csv.py       --data working/cowork_roi_data.json --out output/cowork-sessions.csv
 ```
 
 ---
@@ -188,6 +192,8 @@ python scripts/build_report.py --data working/cowork_roi_data.json --out output/
 
 ## What's new
 
+- **v37** — fixes contradictory Cowork-fit hover text when the optional AI review changes a project's grade, regenerating the label to match the reviewed grade. See [`skill/CHANGELOG-v37.md`](skill/CHANGELOG-v37.md).
+- **v35** — adds `cowork-sessions.csv`, a stable one-row-per-session export with report dimensions, value metrics, telemetry, and Cowork-fit details. See [`skill/CHANGELOG-v35.md`](skill/CHANGELOG-v35.md).
 - **v34** — task categories now follow the **Cowork usage taxonomy** labels, and **Cowork-fit** becomes a rule + LLM-review hybrid (each grade flagged rule-based / AI-confirmed / AI-reviewed). See [`skill/CHANGELOG-v34.md`](skill/CHANGELOG-v34.md).
 - **v32–v33** — taxonomy-driven category assignment and Cowork-fit refinements, plus the new [`classification-methodology.md`](classification-methodology.md) explainer. See [`skill/CHANGELOG-v33.md`](skill/CHANGELOG-v33.md).
 - **v29–v31** — layout overhaul: one canonical **Your projects** table replaces the repeated project lists, deep-dives collapse, and the Value-at-a-glance pillar table is retired. See [`skill/CHANGELOG-v31.md`](skill/CHANGELOG-v31.md).
