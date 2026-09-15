@@ -75,19 +75,49 @@ def main(transcript, out, log=None):
     exec_min=None
     if len(ts)>=2:
         exec_min=round((max(ts)-min(ts)).total_seconds()/60,1)
-    # ---- runs per category (the deck's unit), from write/test/debug & research tool-chains ----
-    # code run = write->test->debug chain ~ 6 code-edit actions/run; analysis run = the 5-phase
-    # cognitive chain ~ 5 research-tool calls/run. compute.py multiplies runs x the cited band.
+    # ---- runs per category (the deck's unit), from tool-chains ----
+    # Surface-based categories (email/comms/meeting) each get their OWN bucket so artifact-free
+    # triage/recap sessions credit the RIGHT category instead of being swallowed by the analysis
+    # bucket or dropping out of the harvest entirely. compute.py trusts the telemetry `runs` dict
+    # verbatim, so any category not emitted here is starved to zero once telemetry exists.
+    #   code run     ~ write->test->debug chain      ~ 6 code-edit actions/run   (band 30/56/96)
+    #   analysis run ~ 5-phase cognitive chain        ~ 5 research-tool calls/run (band 30/67/92)
+    #   email run    ~ one reply/triage cycle         ~ 4 Outlook-mail calls/run  (band 3/7/12)
+    #   comms run    ~ one Teams synth/triage/post    ~ 4 Teams calls/run         (band 2/4/11)
+    #   meeting run  ~ one recap/prep/calendar lookup ~ 3 transcript/cal calls/run(band 12/31/43)
     _CODE={"Edit","Write","MultiEdit","NotebookEdit"}
+    # Outlook MAIL tools = email workflow (drafting/replying/triaging), NOT generic research.
+    _EMAIL={"mcp__outlook__ListMessages","mcp__outlook__GetMessage","mcp__outlook__SendMail",
+        "mcp__outlook__CreateDraft","mcp__outlook__ReplyToMessage","mcp__outlook__CreateMessage",
+        "mcp__outlook__SendMessage","mcp__outlook__MoveMessage","mcp__outlook__UpdateMessage"}
+    # Microsoft Teams tools = communication workflow (synthesize/post/triage chats & channels).
+    _TEAMS={"mcp__m365_teams__ListChats","mcp__m365_teams__ListTeams","mcp__m365_teams__ListChannels",
+        "mcp__m365_teams__ListChannelMessages","mcp__m365_teams__ListChatMessages",
+        "mcp__m365_teams__SendChatMessage","mcp__m365_teams__SendChannelMessage",
+        "mcp__m365_teams__PostMessage","mcp__m365_teams__ReplyToChannelMessage"}
+    # Meeting workflow = recap transcripts, prep briefings, calendar lookups (NOT generic research).
+    _MEETING={"mcp__graph__GetMyRecentTranscripts","mcp__outlook_calendar__ListCalendarView",
+        "mcp__outlook_calendar__GetEvent","mcp__outlook_calendar__ListEvents"}
     _RESEARCH={"mcp__m365_search__SearchM365","mcp__core__web_search","mcp__core__web_fetch",
-        "mcp__outlook__ListMessages","mcp__outlook__GetMessage","mcp__graph__QueryGraph",
-        "mcp__graph__GetMyRecentTranscripts","mcp__outlook_calendar__ListCalendarView",
+        "mcp__graph__QueryGraph",
         "mcp__sharepoint_onedrive__SearchDrive","mcp__sharepoint_onedrive__ReadFileContent"}
     _ce=sum(v for k,v in tools.items() if k in _CODE)
     _rs=sum(v for k,v in tools.items() if k in _RESEARCH)
+    # Match each explicit set plus its server-name variants by prefix, so tool-name drift still
+    # routes to the right category. Order matters: calendar prefix is checked before mail because
+    # mcp__outlook_calendar__ also starts with mcp__outlook_ (mail is mcp__outlook__, double-underscore).
+    _mt=sum(v for k,v in tools.items()
+            if k in _MEETING or k.startswith("mcp__outlook_calendar__"))
+    _em=sum(v for k,v in tools.items()
+            if k in _EMAIL or (k.startswith("mcp__outlook__") and k not in _MEETING))
+    _cm=sum(v for k,v in tools.items()
+            if k in _TEAMS or k.startswith("mcp__m365_teams__"))
     runs_est={}
     if _ce: runs_est["code"]=max(1,round(_ce/6))
     if _rs: runs_est["analysis"]=max(1,round(_rs/5))
+    if _em: runs_est["email"]=max(1,round(_em/4))
+    if _cm: runs_est["comms"]=max(1,round(_cm/4))
+    if _mt: runs_est["meeting"]=max(1,round(_mt/3))
 
     rec={
         "id": sid[:8],
