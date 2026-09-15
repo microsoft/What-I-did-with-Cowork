@@ -244,7 +244,7 @@ def cf_surfaces(goal, outputs, cats):
 # A High label must justify the NEED for Cowork; Medium/Low state the lighter fit.
 CF_REVIEW_LABELS = {
     "H": "Needs Cowork",
-    "M": "Borderline fit",
+    "M": "Moderate fit",
     "L": "Single-app Copilot could do it",
 }
 
@@ -268,6 +268,25 @@ def cowork_fit(goal, outputs, inputs, cats, roles, extra_surfaces=None, review=N
                    or (" add " in g) or ("share " in g and "sharing" not in g) or ("attach" in g)) \
                   and any(o in g for o in ("skill","prompt","workspace","automation","connector")) \
                   and conversational
+
+    # -- multi-file / multi-format complexity. A single-surface task can still be a
+    #    MODERATE (not Low) fit when it means juggling many files, synthesizing across
+    #    multiple file FORMATS, or generating several outputs from multi-format inputs. --
+    in_ext = [_ext(i).lower() for i in (inputs or [])]
+    in_fmts = set(e for e in in_ext if e)
+    out_fmts = set(e for e in out_ext if e)
+    n_in, n_out = len(inputs or []), len(outputs)
+    multi_format_synth = len(in_fmts) >= 2                 # synthesis across >=2 input formats
+    many_files = (n_in >= 3) or (n_out >= 3)               # a large number of files
+    multi_gen = (n_out >= 2) and (len(in_fmts) >= 2)       # several outputs from multi-format inputs
+    moderate_complexity = multi_format_synth or many_files or multi_gen
+
+    # -- automation-like process (inbox triage, channel scan, sweep, workflow, recurring
+    #    run). These orchestrate work across items, so they are never a single in-app
+    #    Copilot task and can never be graded Low. --
+    AUTOMATION_SIGNALS = ("triage","scan","sweep","automat","workflow","monitor",
+        "recurring","batch","bulk","orchestrat","pipeline","auto-")
+    automation_kind = next((w for w in AUTOMATION_SIGNALS if w in g), None)
 
     # -- in-app surfaces the work would touch (this session + any sibling session that
     #    produced the SAME deliverable, so a two-step effort split across sessions
@@ -303,8 +322,31 @@ def cowork_fit(goal, outputs, inputs, cats, roles, extra_surfaces=None, review=N
         grade, label = "L", "Copilot chat could do it"
         why = "A quick conversational task with no build — Copilot chat would have covered it."
     else:
-        grade, label = "M", "Mostly one surface"
-        why = "Borderline — largely a single-surface task that Cowork made a bit easier."
+        grade, label = "M", "Moderate fit"
+        why = "A mostly single-surface task Cowork still made materially easier."
+
+    # -- floors that lift a Low to a MODERATE fit (never touch an H or M) -------
+    # A single-surface task is no longer "just a one-app Copilot job" once it means
+    # managing Cowork, running an automation, or juggling many files / formats.
+    if grade == "L" and platform_op:
+        grade, label = "M", "Moderate fit"
+        why = ("Managing Cowork itself (installing, sharing or scheduling a skill/prompt) — "
+               "light, but a Cowork-platform task, not an in-app Copilot one.")
+    if grade == "L" and moderate_complexity:
+        grade, label = "M", "Moderate fit"
+        if multi_format_synth:
+            why = ("Synthesizes %d files across %d formats — multi-format assembly that is more "
+                   "than a quick single-app task, even on one surface." % (n_in, len(in_fmts)))
+        elif multi_gen:
+            why = ("Generates %d outputs from %d input formats — multi-file, multi-format "
+                   "production that goes past a single-app Copilot task." % (n_out, len(in_fmts)))
+        else:
+            why = ("Juggles %d files at once — the volume alone makes it a moderate fit, more "
+                   "than a single-app Copilot task." % max(n_in, n_out))
+    if grade == "L" and automation_kind:
+        grade, label = "M", "Moderate fit"
+        why = ("Automation-style work (%s) — an inbox/channel triage, scan or workflow run "
+               "orchestrated across items, beyond a one-shot single-app Copilot task." % automation_kind)
 
     result = {"grade": grade, "label": label, "why": why, "method": "rule",
               "surfaces": [x for x in CF_SURFACE_ORDER if x in surfaces],

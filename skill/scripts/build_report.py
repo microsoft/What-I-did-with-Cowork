@@ -6,7 +6,17 @@ Generic + skill-friendly: pass any payload produced by build_data.py.
 
 Usage: python build_report.py --data working/cowork_roi_data.json --out output/cowork-roi-report.html
 """
-import json, argparse, html, collections
+import json, argparse, html, collections, re
+
+def _date_only(s):
+    """Render a generated-timestamp as a plain date — no clock time in the output."""
+    s = (s or "").strip()
+    if not s:
+        return s
+    m = re.match(r"(\d{4}-\d{2}-\d{2})", s)              # ISO: 2026-09-15T14:25 -> 2026-09-15
+    if m:
+        return m.group(1)
+    return re.sub(r"\s+\d{1,2}:\d{2}(:\d{2})?\s*([AaPp][Mm])?.*$", "", s).strip()  # "… 2:25 PM" -> date
 
 # ---- Methodology glossary: per-category research anchors (from the v4 deck) ----
 CAT_SOURCES = {
@@ -65,7 +75,7 @@ ALL_CATS = [
 ]
 
 GLOSSARY_TERMS = [
- ("Cowork-fit (H / M / L)", "How much a project needed Cowork, from the single-surface test: could one in-app / surface-specific Copilot have done it end-to-end? H (green) = Cowork-worthy - it either builds/packages a skill or app, runs a cross-system automation, or spans two or more Copilot surfaces (e.g. Outlook + Excel), which no single Copilot does. M (yellow) = Cowork-specific setup/config — installing, sharing or scheduling a skill or prompt. L (red) = a single surface-specific Copilot (Excel, Word, PowerPoint, Outlook, Teams or chat) could have done it. Heuristic and directional - inferred from the harvested artifacts, systems and roles, not from measured tool telemetry (available for only some sessions)."),
+ ("Cowork-fit (H / M / L)", "How much a project needed Cowork, from the single-surface test: could one in-app / surface-specific Copilot have done it end-to-end? H (green) = Cowork-worthy - it either builds/packages a skill or app, runs a cross-system automation, or spans two or more Copilot surfaces (e.g. Outlook + Excel), which no single Copilot does. M (yellow) = a moderate fit — a mostly single-surface task that still means juggling many files, synthesizing across multiple file formats, or an automation-style run (inbox triage, channel scan, workflow); an automation is never graded Low. L (red) = a single surface-specific Copilot (Excel, Word, PowerPoint, Outlook, Teams or chat) could have done it. Heuristic and directional - inferred from the harvested artifacts, systems and roles, not from measured tool telemetry (available for only some sessions)."),
  ("Run task", "One discrete thing you asked Cowork to do that maps to a single methodology category (e.g. build a deck, run an analysis, write a script). A session can contain several run tasks."),
  ("Typical band (min/task)", "The research-anchored minutes-saved value the methodology applies per run task in a category. This report uses the deck's detailed per-category Typical values. Each Typical is computed as a per-instance figure from a published study × the typical number of instances in a Cowork run — not picked from a range."),
  ("Low / High band", "The published floor and ceiling around each Typical. The report shows your total at Low, Typical and High so you can see the conservative-to-optimistic range."),
@@ -855,10 +865,10 @@ html{{scroll-behavior:smooth}}
   <h2 class="wbp-feat-h"><span class="sec">📦</span> Your projects</h2>
   <div class="cf-summary">
     <span class="cf-kpi"><span class="cf cf-H">H</span><span class="cf-n">{cfs['H']}</span><span class="cf-lbl">needed Cowork</span></span>
-    <span class="cf-kpi"><span class="cf cf-M">M</span><span class="cf-n">{cfs['M']}</span><span class="cf-lbl">managing Cowork (install / share / schedule)</span></span>
+    <span class="cf-kpi"><span class="cf cf-M">M</span><span class="cf-n">{cfs['M']}</span><span class="cf-lbl">moderate fit (multi-file / automation)</span></span>
     <span class="cf-kpi"><span class="cf cf-L">L</span><span class="cf-n">{cfs['L']}</span><span class="cf-lbl">a single Copilot could do it</span></span>
   </div>
-  <p class="lead" style="margin:0 0 12px">All your projects in one table, each with a <b>Cowork-fit</b> dot — <b class="cf-ih">H</b> needed Cowork · <b class="cf-im">M</b> managing Cowork · <b class="cf-il">L</b> a single Copilot could do it. <b>Hover any dot</b> for the specific reason. <b>Group by</b> process or category; the rows regroup in place, so you read the list once. Value follows your hourly rate.</p>
+  <p class="lead" style="margin:0 0 12px">All your projects in one table, each with a <b>Cowork-fit</b> dot — <b class="cf-ih">H</b> needed Cowork · <b class="cf-im">M</b> moderate fit · <b class="cf-il">L</b> a single Copilot could do it. <b>Hover any dot</b> for the specific reason. <b>Group by</b> process or category; the rows regroup in place, so you read the list once. Value follows your hourly rate.</p>
   <div class="pj-controls">
     <label class="pj-lbl" for="projGroupSel">Group by</label>
     <select id="projGroupSel" class="pj-select" onchange="projGroup(this.value)">
@@ -915,7 +925,7 @@ html{{scroll-behavior:smooth}}
     </span></div></div>
   </details>
 
-  <div class="foot">Generated {esc(m['generated'])} · Cowork Time-Savings Methodology v4 · Time Saved &amp; Value are research-anchored (cited per-task bands); the speed multiplier's assisted clock is a modeled estimate.<br>
+  <div class="foot">Generated {esc(_date_only(m['generated']))} · Cowork Time-Savings Methodology v4 · Time Saved &amp; Value are research-anchored (cited per-task bands); the speed multiplier's assisted clock is a modeled estimate.<br>
   Report inspired from <a href="{esc(GITHUB_URL)}" target="_blank" rel="noopener">“What I Did — GitHub Copilot Impact Report” ↗</a> · Powered by Copilot Cowork</div>
 </div>
 

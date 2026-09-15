@@ -94,7 +94,7 @@ single in-app Copilot can do: building, automating, or **orchestrating across ap
 | Grade | Colour | Meaning |
 |---|---|---|
 | **H — High** | Green | Cowork was genuinely needed. |
-| **M — Medium** | Yellow | Borderline — a mostly single-surface task Cowork still made materially easier. |
+| **M — Moderate** | Yellow | Moderate fit — a mostly single-surface task that still means juggling many files, synthesizing across multiple file formats, or an automation-style run. |
 | **L — Low** | Red | One in-app Copilot could have done it end-to-end. |
 
 ### Layer 1 — the deterministic rule (baseline)
@@ -111,8 +111,16 @@ A session is graded **High** if **any** of these holds:
 5. **It spans two or more Copilot surfaces** (e.g. find the emails in **Outlook**,
    then build the tracker in **Excel**).
 
-Otherwise it is **Low** (all in one in-app surface, or a quick conversational task)
-or **Medium** (borderline single-surface).
+Otherwise it is **Low** (all in one in-app surface, or a quick conversational task),
+**unless** one of the Moderate floors applies — a single-surface task is lifted from
+Low to **Moderate** when it:
+
+- involves **automation** — inbox triage, channel scan, sweep, workflow, recurring or
+  batch run. *An automation-style process can never be graded Low*; or
+- juggles a **large number of files**, performs **multi-file-format synthesis** (inputs
+  spanning two or more formats), or generates **multiple outputs from multi-format
+  inputs**; or
+- is a lightweight **Cowork-platform op** (install / share / schedule a skill or prompt).
 
 **Cross-session orchestration.** A deliverable built across two sessions — e.g.
 identify the emails in one session, build the Excel tracker in another — unions the

@@ -2,6 +2,32 @@
 
 ---
 
+## v39 — Cowork-fit: automation floor + Moderate-fit redefinition; date-only output
+
+Three refinements to how work is graded and reported.
+
+### Cowork-fit classifier (`scripts/compute.py`)
+- **Automation can never be Low.** A single-surface process that is automation-style —
+  inbox triage, channel scan, sweep, workflow, monitor, recurring/batch/bulk, pipeline —
+  is now floored from **L → M**. These orchestrate work across items, so they are never a
+  one-shot single-app Copilot task.
+- **Moderate fit redefined.** A task that one in-app Copilot could technically do is lifted
+  **L → M** when it juggles a **large number of files**, performs **multi-file-format
+  synthesis** (inputs spanning ≥2 formats), or **generates multiple outputs from
+  multi-format inputs**. The **M** grade is now labelled **"Moderate fit"** everywhere
+  (badge legend, glossary, CSV, methodology reference).
+
+### Report output (`scripts/build_report.py`, `SKILL.md`)
+- **Dates only — no timestamps.** The report footer renders the generated date with the
+  clock time stripped, and the workflow now instructs the readout to show dates only.
+- **No meta sections.** The readout must not add "Scope", "Evidence Limitations", or
+  similar caveat blocks — the standing caveats already live in the report's methodology
+  and glossary.
+
+No band, methodology-weight, or schema change; grades only move within the existing H/M/L.
+
+---
+
 ## v38 — Fix telemetry undercount for surface-based categories (email/comms/meeting)
 
 Heavy Outlook/Teams/meeting users saw **Email, Communication, and Meeting workflows
