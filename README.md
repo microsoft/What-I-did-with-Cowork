@@ -25,7 +25,7 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 
 **Let Cowork install it for you (easiest):**
 
-1. **Download** the latest version: [`cowork-roi-report-skill-v37.zip`](cowork-roi-report-skill-v37.zip) *(no need to unzip — attach it as-is)*
+1. **Download** the latest version: [`cowork-roi-report-skill-v38.zip`](cowork-roi-report-skill-v38.zip) *(no need to unzip — attach it as-is)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session
 3. **Click the ➕ (plus) symbol** to attach the zip file, then send:
 
@@ -36,8 +36,8 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 
 | Version | File | Status |
 |---|---|---|
-| **v37** | [`cowork-roi-report-skill-v37.zip`](cowork-roi-report-skill-v37.zip) | ✅ **Latest version** — recommended |
-| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v34) |
+| **v38** | [`cowork-roi-report-skill-v38.zip`](cowork-roi-report-skill-v38.zip) | ✅ **Latest version** — recommended |
+| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v37) |
 
 ---
 
@@ -139,10 +139,7 @@ Sources: Stanford-WB, Microsoft Research, NBER, Forrester — all clickable in t
 cowork-roi-report/
 ├── SKILL.md                     # skill definition + workflow (loaded by Cowork)
 ├── README.md                    # technical documentation
-├── CHANGELOG-v37.md             # latest — consistent labels when AI review changes Cowork-fit
-├── CHANGELOG-v35.md             # session-level CSV export
-├── CHANGELOG-v28…v34.md         # Cowork-fit grading + single "Your projects" table
-├── CHANGELOG-v5…v27.md          # full version history
+├── CHANGELOG.md                 # consolidated version history (latest: v38 telemetry fix)
 ├── scripts/
 │   ├── reconcile_taxonomy.py    # align-first/create-if-novel; owner-scoped registry; runs before classify.py
 │   ├── classify.py              # deterministic ext→category classifier
@@ -192,14 +189,13 @@ python scripts/to_csv.py       --data working/cowork_roi_data.json --out output/
 
 ## What's new
 
-- **v37** — fixes contradictory Cowork-fit hover text when the optional AI review changes a project's grade, regenerating the label to match the reviewed grade. See [`skill/CHANGELOG-v37.md`](skill/CHANGELOG-v37.md).
-- **v35** — adds `cowork-sessions.csv`, a stable one-row-per-session export with report dimensions, value metrics, telemetry, and Cowork-fit details. See [`skill/CHANGELOG-v35.md`](skill/CHANGELOG-v35.md).
-- **v34** — task categories now follow the **Cowork usage taxonomy** labels, and **Cowork-fit** becomes a rule + LLM-review hybrid (each grade flagged rule-based / AI-confirmed / AI-reviewed). See [`skill/CHANGELOG-v34.md`](skill/CHANGELOG-v34.md).
-- **v32–v33** — taxonomy-driven category assignment and Cowork-fit refinements, plus the new [`classification-methodology.md`](classification-methodology.md) explainer. See [`skill/CHANGELOG-v33.md`](skill/CHANGELOG-v33.md).
-- **v29–v31** — layout overhaul: one canonical **Your projects** table replaces the repeated project lists, deep-dives collapse, and the Value-at-a-glance pillar table is retired. See [`skill/CHANGELOG-v31.md`](skill/CHANGELOG-v31.md).
-- **v28** — adds the per-project **Cowork-fit (H/M/L)** grade via the single-surface test. See [`skill/CHANGELOG-v28.md`](skill/CHANGELOG-v28.md).
+- **v38** — fixes telemetry undercount for surface-based categories: Outlook-mail sessions now credit **Email**, Teams sessions credit **Communication**, and transcript/calendar sessions credit **Meeting**, instead of being mislabeled as Analysis or dropped entirely.
+- **v37** — fixes contradictory Cowork-fit hover text when the optional AI review changes a project's grade, regenerating the label to match the reviewed grade.
+- **v35** — adds `cowork-sessions.csv`, a stable one-row-per-session export with report dimensions, value metrics, telemetry, and Cowork-fit details.
+- **v34** — task categories now follow the **Cowork usage taxonomy** labels, and **Cowork-fit** becomes a rule + LLM-review hybrid (each grade flagged rule-based / AI-confirmed / AI-reviewed).
+- **v28–v33** — per-project **Cowork-fit (H/M/L)** grading, taxonomy-driven category assignment, and the layout overhaul with one canonical **Your projects** table.
 
-Full version history lives in [`skill/`](skill) and [`archive/`](archive).
+Full version history lives in [`skill/CHANGELOG.md`](skill/CHANGELOG.md), with older release zips in [`archive/`](archive).
 
 ---
 
