@@ -25,7 +25,7 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 
 **Let Cowork install it for you (easiest):**
 
-1. **Download** the latest version: [`cowork-roi-report-skill-v39.zip`](cowork-roi-report-skill-v39.zip) *(no need to unzip — attach it as-is)*
+1. **Download** the latest version: [`cowork-roi-report-skill-v40.zip`](cowork-roi-report-skill-v40.zip) *(no need to unzip — attach it as-is)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session
 3. **Click the ➕ (plus) symbol** to attach the zip file, then send:
 
@@ -36,8 +36,8 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 
 | Version | File | Status |
 |---|---|---|
-| **v39** | [`cowork-roi-report-skill-v39.zip`](cowork-roi-report-skill-v39.zip) | ✅ **Latest version** — recommended |
-| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v38) |
+| **v40** | [`cowork-roi-report-skill-v40.zip`](cowork-roi-report-skill-v40.zip) | ✅ **Latest version** — recommended |
+| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v39) |
 
 ---
 
@@ -139,7 +139,7 @@ Sources: Stanford-WB, Microsoft Research, NBER, Forrester — all clickable in t
 cowork-roi-report/
 ├── SKILL.md                     # skill definition + workflow (loaded by Cowork)
 ├── README.md                    # technical documentation
-├── CHANGELOG.md                 # consolidated version history (latest: v39 Cowork-fit + date-only output)
+├── CHANGELOG.md                 # consolidated version history (latest: v40 evidence-based Cowork-fit)
 ├── scripts/
 │   ├── reconcile_taxonomy.py    # align-first/create-if-novel; owner-scoped registry; runs before classify.py
 │   ├── classify.py              # deterministic ext→category classifier
@@ -189,6 +189,7 @@ python scripts/to_csv.py       --data working/cowork_roi_data.json --out output/
 
 ## What's new
 
+- **v40** — Cowork-fit is now **evidence-based**: it grades what Cowork *did* (the apps its actions touched, sources reviewed, and outputs), not just the one saved file. Cross-app workflows (e.g. **Outlook + Excel → High**) are graded on evidence; when no action history exists the work is marked **Insufficient evidence** instead of defaulting to Low; and the AI review can't downgrade verified cross-app work to Low, or automation below Moderate, without resolving the conflict. CSV gains evidence/apps columns.
 - **v39** — Cowork-fit refinements: automation-style work (inbox triage, channel scan, workflow) can never grade **Low**, and **Moderate fit** now also covers multi-file / multi-format synthesis. Report output shows **dates only** (no timestamps) and drops meta caveat sections.
 - **v38** — fixes telemetry undercount for surface-based categories: Outlook-mail sessions now credit **Email**, Teams sessions credit **Communication**, and transcript/calendar sessions credit **Meeting**, instead of being mislabeled as Analysis or dropped entirely.
 - **v37** — fixes contradictory Cowork-fit hover text when the optional AI review changes a project's grade, regenerating the label to match the reviewed grade.

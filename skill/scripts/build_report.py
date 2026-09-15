@@ -75,7 +75,7 @@ ALL_CATS = [
 ]
 
 GLOSSARY_TERMS = [
- ("Cowork-fit (H / M / L)", "How much a project needed Cowork, from the single-surface test: could one in-app / surface-specific Copilot have done it end-to-end? H (green) = Cowork-worthy - it either builds/packages a skill or app, runs a cross-system automation, or spans two or more Copilot surfaces (e.g. Outlook + Excel), which no single Copilot does. M (yellow) = a moderate fit — a mostly single-surface task that still means juggling many files, synthesizing across multiple file formats, or an automation-style run (inbox triage, channel scan, workflow); an automation is never graded Low. L (red) = a single surface-specific Copilot (Excel, Word, PowerPoint, Outlook, Teams or chat) could have done it. Heuristic and directional - inferred from the harvested artifacts, systems and roles, not from measured tool telemetry (available for only some sessions)."),
+ ("Cowork-fit (H / M / L)", "How much a project needed Cowork, judged from the WORKFLOW evidence (what Cowork actually did — the apps its actions touched, sources reviewed and outputs), not just the file it saved. H (green) = Cowork-worthy - it builds/packages a skill or app, runs a cross-system automation, or spans two or more Copilot surfaces (e.g. Outlook + Excel), which no single Copilot does; cross-app work confirmed by the action trace is 'verified'. M (yellow) = a moderate fit — a mostly single-surface task that still means juggling many files, synthesizing across multiple file formats, or an automation-style run (inbox triage, channel scan, workflow); an automation is never graded Low. L (red) = the action trace confirms a single surface-specific Copilot (Excel, Word, PowerPoint, Outlook, Teams or chat) could have done it. ? (grey) = insufficient evidence — when no action history is available a lone saved file cannot establish a single-app workflow, so it is left unassessed rather than assumed Low. Heuristic and directional - inferred where telemetry is absent."),
  ("Run task", "One discrete thing you asked Cowork to do that maps to a single methodology category (e.g. build a deck, run an analysis, write a script). A session can contain several run tasks."),
  ("Typical band (min/task)", "The research-anchored minutes-saved value the methodology applies per run task in a category. This report uses the deck's detailed per-category Typical values. Each Typical is computed as a per-instance figure from a published study × the typical number of instances in a Cowork run — not picked from a range."),
  ("Low / High band", "The published floor and ceiling around each Typical. The report shows your total at Low, Typical and High so you can see the conservative-to-optimistic range."),
@@ -91,7 +91,7 @@ GLOSSARY_TERMS = [
 ]
 
 def esc(s): return html.escape(str(s))
-_CF_METHOD={"rule":"rule-based","AI-reviewed":"AI-reviewed (adjusted from rule)","AI-confirmed":"AI-reviewed (confirmed rule)"}
+_CF_METHOD={"rule":"rule-based","AI-reviewed":"AI-reviewed (adjusted from rule)","AI-confirmed":"AI-reviewed (confirmed rule)","AI-review-rejected":"AI review rejected — kept rule grade (evidence unresolved)"}
 def cf_badge(g):
     cf=(g or {}).get("cowork_fit") or {}
     gr=cf.get("grade")
@@ -99,11 +99,12 @@ def cf_badge(g):
     lbl=cf.get("label",""); why=cf.get("why","")
     mth=_CF_METHOD.get(cf.get("method","rule"),"rule-based")
     tip=((("%s: %s" % (lbl, why)) if why else lbl) or gr)+"  ["+mth+"]"
-    return '<span class="cf cf-%s" title="%s">%s</span>' % (gr, esc(tip), gr)
+    gc="U" if gr=="?" else gr
+    return '<span class="cf cf-%s" title="%s">%s</span>' % (gc, esc(tip), gr)
 
 def build(data, out_path, anon=False):
     m=data["meta"]; k=data["kpis"]; val=data["value"]; cats=data["categories"]
-    cfs=data.get("cowork_fit_summary",{"H":0,"M":0,"L":0})
+    cfs=data.get("cowork_fit_summary",{"H":0,"M":0,"L":0,"U":0})
     disp_user=("Cowork user (anonymized)" if anon else m["user"])
     intents=data["intents"]; roles=data["roles"]; goals=data["goals"]; heat=data["heatmap"]
     skills_aug=data.get("skills_augmented",[]); inventory=data.get("inventory",[])
@@ -445,7 +446,7 @@ def build(data, out_path, anon=False):
     top_roles_str=" · ".join(_rolelink(r["role"]) for r in roles[:3] if r["hours"]>=0.2)
 
     # ---- Server-side "Your projects" rows (never empty) + slim goals for the group dropdown ----
-    CF_NAME={"H":"Needed Cowork (H)","M":"Cowork-platform op (M)","L":"Single-Copilot task (L)"}
+    CF_NAME={"H":"Needed Cowork (H)","M":"Moderate fit (M)","L":"Single-Copilot task (L)","?":"Insufficient evidence (?)"}
     pj_goals=[g for g in goals if g.get("minutes_typical",0)>0 or g.get("conversational")]
     def _pj_row(g):
         v=round(g.get("hours_typical",0)*rate)
@@ -739,11 +740,12 @@ a{{color:var(--blue)}}
 .cf-H{{background:#1A7F37;color:#fff}}
 .cf-M{{background:#F2C400;color:#3A2E00}}
 .cf-L{{background:#D13438;color:#fff}}
+.cf-U{{background:#8A8886;color:#fff}}
 .cf-summary{{display:flex;flex-wrap:wrap;gap:22px;align-items:center;background:#FBFAFB;border:1px solid #EAE8E6;border-radius:12px;padding:12px 16px;margin:2px 0 14px;font-size:12.5px}}
 .cf-summary .cf-kpi{{display:flex;align-items:center;gap:8px}}
 .cf-summary .cf-n{{font-size:19px;font-weight:800;color:var(--ink)}}
 .cf-summary .cf-lbl{{color:var(--mut)}}
-.cf-ih{{color:#1A7F37}} .cf-im{{color:#B8900B}} .cf-il{{color:#D13438}}
+.cf-ih{{color:#1A7F37}} .cf-im{{color:#B8900B}} .cf-il{{color:#D13438}} .cf-iu{{color:#8A8886}}
 .pj-cf{{text-align:center}}
 /* Unified "Your projects" table (Option A) */
 .pj-controls{{display:flex;flex-wrap:wrap;gap:20px 26px;align-items:center;margin:8px 0 14px}}
@@ -867,8 +869,9 @@ html{{scroll-behavior:smooth}}
     <span class="cf-kpi"><span class="cf cf-H">H</span><span class="cf-n">{cfs['H']}</span><span class="cf-lbl">needed Cowork</span></span>
     <span class="cf-kpi"><span class="cf cf-M">M</span><span class="cf-n">{cfs['M']}</span><span class="cf-lbl">moderate fit (multi-file / automation)</span></span>
     <span class="cf-kpi"><span class="cf cf-L">L</span><span class="cf-n">{cfs['L']}</span><span class="cf-lbl">a single Copilot could do it</span></span>
+    <span class="cf-kpi"><span class="cf cf-U">?</span><span class="cf-n">{cfs.get('U',0)}</span><span class="cf-lbl">insufficient evidence (no action history)</span></span>
   </div>
-  <p class="lead" style="margin:0 0 12px">All your projects in one table, each with a <b>Cowork-fit</b> dot — <b class="cf-ih">H</b> needed Cowork · <b class="cf-im">M</b> moderate fit · <b class="cf-il">L</b> a single Copilot could do it. <b>Hover any dot</b> for the specific reason. <b>Group by</b> process or category; the rows regroup in place, so you read the list once. Value follows your hourly rate.</p>
+  <p class="lead" style="margin:0 0 12px">All your projects in one table, each with a <b>Cowork-fit</b> dot — <b class="cf-ih">H</b> needed Cowork · <b class="cf-im">M</b> moderate fit · <b class="cf-il">L</b> a single Copilot could do it · <b class="cf-iu">?</b> insufficient evidence. <b>Hover any dot</b> for the specific reason. <b>Group by</b> process or category; the rows regroup in place, so you read the list once. Value follows your hourly rate.</p>
   <div class="pj-controls">
     <label class="pj-lbl" for="projGroupSel">Group by</label>
     <select id="projGroupSel" class="pj-select" onchange="projGroup(this.value)">
@@ -967,8 +970,8 @@ document.getElementById('rate').addEventListener('input',recalc);
 
 var PJ_GROUP='process';
 function pjEsc(x){{return String(x==null?'':x).replace(/[&<>"]/g,function(c){{return {{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}}[c];}});}}
-var CF_METHOD={{rule:'rule-based','AI-reviewed':'AI-reviewed (adjusted from rule)','AI-confirmed':'AI-reviewed (confirmed rule)'}};
-function pjBadge(cf){{if(!cf||!cf.grade)return '';var m=CF_METHOD[cf.method||'rule']||'rule-based';var tip=((cf.label||'')+(cf.why?(': '+cf.why):''))+'  ['+m+']';return '<span class="cf cf-'+cf.grade+'" title="'+pjEsc(tip||cf.grade)+'">'+cf.grade+'</span>';}}
+var CF_METHOD={{rule:'rule-based','AI-reviewed':'AI-reviewed (adjusted from rule)','AI-confirmed':'AI-reviewed (confirmed rule)','AI-review-rejected':'AI review rejected — kept rule grade (evidence unresolved)'}};
+function pjBadge(cf){{if(!cf||!cf.grade)return '';var m=CF_METHOD[cf.method||'rule']||'rule-based';var tip=((cf.label||'')+(cf.why?(': '+cf.why):''))+'  ['+m+']';var gc=cf.grade==='?'?'U':cf.grade;return '<span class="cf cf-'+gc+'" title="'+pjEsc(tip||cf.grade)+'">'+cf.grade+'</span>';}}
 function pjRateVal(){{return parseFloat(document.getElementById('rate').value)||0;}}
 function pjRowsHtml(list,rate){{var h='';list.forEach(function(g){{var v=Math.round((g.hours_typical||0)*rate);var conv=g.conversational?' <span class="pj-conv">chat-only</span>':'';h+='<tr><td class="pj-p"><span class="pj-t">'+pjEsc(g.title)+'</span>'+conv+'</td>'+'<td class="pj-cf">'+pjBadge(g.cowork_fit)+'</td>'+'<td class="num">'+(g.hours_typical||0).toFixed(1)+'h</td>'+'<td class="num">$'+fmt(v)+'</td></tr>';}});return h;}}
 function projRender(){{var tb=document.getElementById('projRows'); if(!tb)return; var rate=pjRateVal();

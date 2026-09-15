@@ -492,6 +492,9 @@ def main(inp: str, out: str, overrides_path: str = _OVERRIDES_PATH) -> None:
             rec["code_loc"] = s["code_loc"]
         if s.get("runs") is not None:
             rec["runs"] = s["runs"]
+        for _ev in ("request", "actions", "apps_accessed", "sources_reviewed"):
+            if s.get(_ev) is not None:
+                rec[_ev] = s[_ev]
         if s.get("cowork_fit_review") is not None:
             rec["cowork_fit_review"] = s["cowork_fit_review"]
         if note:

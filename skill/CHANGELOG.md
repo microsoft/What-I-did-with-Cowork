@@ -2,6 +2,40 @@
 
 ---
 
+## v40 — Cowork-fit: evidence-based grading (assess what Cowork *did*, not just the file)
+
+The classifier now grades the **workflow** — the apps its actions touched, the sources it
+reviewed, and its outputs — rather than inferring a single surface from the one file that
+was saved.
+
+### Evidence capture (`scripts/mine_session.py`, `scripts/classify.py`)
+- Mines and passes through four new per-session fields: **`request`** (the original ask),
+  **`actions`** (tool/action sequence, first-seen order), **`apps_accessed`** (apps proven
+  by the action trace, e.g. Outlook, Excel, Teams), and **`sources_reviewed`** (count).
+- These are populated **only when the action history is available** and left **absent**
+  (not `[]`) when it is not — absence is the signal to fall back to Insufficient evidence.
+
+### Cowork-fit classifier (`scripts/compute.py`)
+- **Apps drive the grade.** The grader unions **verified** apps (from actions) with apps
+  **inferred** from outputs and related sessions. A cross-app workflow (e.g. **Outlook +
+  Excel → H**) grades High on evidence, not on the single output file.
+- **New `?` — Insufficient evidence.** When there is no action history, a lone output can
+  no longer establish an Excel-only (or any single-app) workflow, so the work is left
+  **unassessed** instead of defaulting confidently to **L**.
+- **Verified vs inferred cross-app.** H is flagged *verified* when the action trace proves
+  two or more apps, *inferred* when only outputs imply it.
+- **AI-review guardrail.** The review may **not** downgrade **verified cross-app** work to
+  **L**, nor **automation** below **M**, unless it explicitly resolves the conflicting
+  evidence; a blocked attempt is flagged **AI-review-rejected** (rule grade kept).
+
+### Report & export (`scripts/build_report.py`, `scripts/to_csv.py`)
+- Report renders the grey **`?` (Insufficient evidence)** badge, a fourth summary KPI, and
+  an evidence-first Cowork-fit glossary entry.
+- CSV adds **`cowork_fit_evidence`**, **`cowork_fit_apps`**, and
+  **`cowork_fit_verified_cross_app`** columns.
+
+---
+
 ## v39 — Cowork-fit: automation floor + Moderate-fit redefinition; date-only output
 
 Three refinements to how work is graded and reported.

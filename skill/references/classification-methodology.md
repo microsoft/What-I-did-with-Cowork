@@ -91,11 +91,21 @@ not count — this keeps the category honest.
 If **yes**, the work didn't need Cowork. Cowork's distinct value is the work no
 single in-app Copilot can do: building, automating, or **orchestrating across apps**.
 
+**Evidence-first.** The test is applied to *what Cowork actually did* — the **workflow
+evidence** (the apps its actions touched, the sources it reviewed, and its outputs),
+not merely the file it saved. An Excel-only *output* does **not** establish an
+Excel-only *workflow*. The grader unions the **verified** apps from the action trace
+(`apps_accessed`) with the apps **inferred** from outputs and related sessions; a
+cross-app workflow (e.g. Outlook + Excel) is **H**. When **no action history is
+available**, a lone output cannot prove a single app, so the assessment is
+**"? — Insufficient evidence"** rather than a confident **L**.
+
 | Grade | Colour | Meaning |
 |---|---|---|
-| **H — High** | Green | Cowork was genuinely needed. |
+| **H — High** | Green | Cowork was genuinely needed (build / automation / cross-app). Cross-app confirmed by the action trace is *verified*. |
 | **M — Moderate** | Yellow | Moderate fit — a mostly single-surface task that still means juggling many files, synthesizing across multiple file formats, or an automation-style run. |
-| **L — Low** | Red | One in-app Copilot could have done it end-to-end. |
+| **L — Low** | Red | The action trace confirms one in-app Copilot could have done it end-to-end. |
+| **? — Insufficient evidence** | Grey | No action history — a lone saved file can't establish a single-app workflow, so it is left unassessed, not assumed Low. |
 
 ### Layer 1 — the deterministic rule (baseline)
 
@@ -140,6 +150,13 @@ single-surface test and may **confirm or adjust** the rule grade:
   the rule's grade preserved for transparency (e.g. *"M — AI-reviewed [rule said
   L]"*).
 - When no review is recorded, the **rule grade stands**, flagged **rule-based**.
+
+**Guardrail on downgrades.** The review may not quietly overturn action-grounded
+evidence. It **cannot** downgrade a **verified cross-app** workflow to **L**, nor an
+**automation** run below **M**, unless it explicitly **resolves the conflicting
+evidence** (records a `conflict` / `resolves_evidence` note). A downgrade that fails
+this test is rejected: the rule grade is kept and the attempt is flagged
+**AI-review-rejected**, with the proposed grade and reason preserved for transparency.
 
 Every H/M/L dot in the report is hoverable and shows its **project-specific reason
 and its method** (rule-based vs AI-reviewed), so you can always see *why* a grade

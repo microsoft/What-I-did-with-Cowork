@@ -54,7 +54,8 @@ COLUMNS = [
     "skills", "professional_roles",
     "hours_saved_typical", "value_usd", "speed_x", "credits", "cost_usd",
     "cowork_fit_grade", "cowork_fit_method", "cowork_fit_rule_grade",
-    "cowork_fit_label", "cowork_fit_surfaces", "cowork_fit_why",
+    "cowork_fit_label", "cowork_fit_surfaces", "cowork_fit_evidence",
+    "cowork_fit_apps", "cowork_fit_verified_cross_app", "cowork_fit_why",
 ]
 
 
@@ -103,6 +104,9 @@ def rows_from(data):
             "cowork_fit_rule_grade": cf.get("rule_grade", cf.get("grade", "")),
             "cowork_fit_label": cf.get("label", ""),
             "cowork_fit_surfaces": _pipe(cf.get("surfaces")),
+            "cowork_fit_evidence": cf.get("evidence", ""),
+            "cowork_fit_apps": _pipe(cf.get("apps")),
+            "cowork_fit_verified_cross_app": str(bool(cf.get("verified_cross_app"))).lower(),
             "cowork_fit_why": cf.get("why", ""),
         })
     return out

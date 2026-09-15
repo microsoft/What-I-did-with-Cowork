@@ -246,9 +246,10 @@ CF_REVIEW_LABELS = {
     "H": "Needs Cowork",
     "M": "Moderate fit",
     "L": "Single-app Copilot could do it",
+    "?": "Insufficient evidence",
 }
 
-def cowork_fit(goal, outputs, inputs, cats, roles, extra_surfaces=None, review=None):
+def cowork_fit(goal, outputs, inputs, cats, roles, extra_surfaces=None, review=None, evidence=None):
     g = " " + (goal or "").lower() + " "
     out_ext = [_ext(o).lower() for o in outputs]
     conversational = (len(outputs) == 0)
@@ -288,10 +289,24 @@ def cowork_fit(goal, outputs, inputs, cats, roles, extra_surfaces=None, review=N
         "recurring","batch","bulk","orchestrat","pipeline","auto-")
     automation_kind = next((w for w in AUTOMATION_SIGNALS if w in g), None)
 
-    # -- in-app surfaces the work would touch (this session + any sibling session that
-    #    produced the SAME deliverable, so a two-step effort split across sessions
-    #    still reads as cross-surface). --
-    surfaces = cf_surfaces(goal, outputs, cats) | set(extra_surfaces or [])
+    # -- WORKFLOW EVIDENCE. Assess what Cowork DID, not just the file it produced.
+    #    `evidence` carries the action-grounded trace mined from the session transcript:
+    #      apps    = M365 apps the ACTIONS actually touched (verified)
+    #      actions = the tool/action names, in order
+    #      sources = count of sources reviewed
+    #    Verified apps are unioned with the surfaces INFERRED from outputs/goal and with
+    #    surfaces from related sessions (extra_surfaces). Cross-app evidence -> H. When NO
+    #    action history exists, a lone output cannot prove a single-app workflow. --
+    ev = evidence or {}
+    verified_apps = set(a for a in (ev.get("apps") or []) if a)
+    ev_actions = ev.get("actions") or []
+    evidence_available = bool(verified_apps or ev_actions or ev.get("available"))
+    inferred_surfaces = cf_surfaces(goal, outputs, cats) | set(extra_surfaces or [])
+    surfaces = inferred_surfaces | verified_apps
+    def _order(ss):
+        return [x for x in CF_SURFACE_ORDER if x in ss] + sorted(s for s in ss if s not in CF_SURFACE_ORDER)
+    # verified cross-app = >=2 apps with at least one proven by the action trace
+    verified_cross_app = (len(verified_apps) >= 2) or (len(verified_apps) >= 1 and len(surfaces) >= 2)
 
     # -- Specialized workflow = Cowork-native (automation, connectors, scheduled/recurring
     #    prompts, skill build/packaging). Per methodology, this is a High Cowork match. --
@@ -311,28 +326,36 @@ def cowork_fit(goal, outputs, inputs, cats, roles, extra_surfaces=None, review=N
                "build) — these are Cowork-native; no in-app Copilot runs them.")
     elif len(surfaces) >= 2:
         grade = "H"
-        surf=" + ".join([x for x in CF_SURFACE_ORDER if x in surfaces])
+        surf=" + ".join(_order(surfaces))
         label = "Needs " + surf + " Copilot"
-        why = "This spans %s — no single Copilot works across apps, so it needs Cowork." % surf
-    elif len(surfaces) == 1:
+        prov = "verified from the action trace" if verified_cross_app else "inferred from the outputs"
+        why = "This spans %s (%s) — no single Copilot works across apps, so it needs Cowork." % (surf, prov)
+    elif len(surfaces) == 1 and evidence_available:
         only = next(iter(surfaces))
         grade, label = "L", "%s Copilot could do it" % only
-        why = "This is all in one app (%s) — %s Copilot alone would have covered it." % (only, only)
-    elif conversational:
+        why = "The action trace shows this stayed in one app (%s) — %s Copilot alone would have covered it." % (only, only)
+    elif conversational and evidence_available:
         grade, label = "L", "Copilot chat could do it"
         why = "A quick conversational task with no build — Copilot chat would have covered it."
+    elif not evidence_available:
+        # No action history: a single saved file (or none) does NOT establish a single-app
+        # workflow. Assess as INSUFFICIENT EVIDENCE rather than defaulting confidently to Low.
+        grade, label = "?", "Insufficient evidence"
+        seen = ("only a saved %s file is visible" % out_ext[0]) if out_ext else "no saved artifact and no action trace are available"
+        why = ("No action history for this session — %s, which can't confirm whether the workflow "
+               "stayed in one app. Marked insufficient evidence, not assumed single-app." % seen)
     else:
         grade, label = "M", "Moderate fit"
         why = "A mostly single-surface task Cowork still made materially easier."
 
-    # -- floors that lift a Low to a MODERATE fit (never touch an H or M) -------
-    # A single-surface task is no longer "just a one-app Copilot job" once it means
-    # managing Cowork, running an automation, or juggling many files / formats.
-    if grade == "L" and platform_op:
+    # -- floors that lift a Low / Insufficient-evidence case to a MODERATE fit (never an H/M).
+    # These fire on POSITIVE signals from the request or the files themselves — automation
+    # intent, or multi-file / multi-format work — which stand even without an action trace. --
+    if grade in ("L", "?") and platform_op:
         grade, label = "M", "Moderate fit"
         why = ("Managing Cowork itself (installing, sharing or scheduling a skill/prompt) — "
                "light, but a Cowork-platform task, not an in-app Copilot one.")
-    if grade == "L" and moderate_complexity:
+    if grade in ("L", "?") and moderate_complexity:
         grade, label = "M", "Moderate fit"
         if multi_format_synth:
             why = ("Synthesizes %d files across %d formats — multi-format assembly that is more "
@@ -343,34 +366,49 @@ def cowork_fit(goal, outputs, inputs, cats, roles, extra_surfaces=None, review=N
         else:
             why = ("Juggles %d files at once — the volume alone makes it a moderate fit, more "
                    "than a single-app Copilot task." % max(n_in, n_out))
-    if grade == "L" and automation_kind:
+    if grade in ("L", "?") and automation_kind:
         grade, label = "M", "Moderate fit"
         why = ("Automation-style work (%s) — an inbox/channel triage, scan or workflow run "
                "orchestrated across items, beyond a one-shot single-app Copilot task." % automation_kind)
 
     result = {"grade": grade, "label": label, "why": why, "method": "rule",
-              "surfaces": [x for x in CF_SURFACE_ORDER if x in surfaces],
+              "surfaces": _order(surfaces),
+              "apps": _order(surfaces),
+              "verified_apps": _order(verified_apps),
+              "evidence": ("insufficient" if grade == "?" else
+                           "verified" if verified_apps else "inferred"),
+              "verified_cross_app": bool(verified_cross_app),
               "out_of_domain_roles": ood}
     # -- LLM-review layer -----------------------------------------------------
     # The deterministic grade above is a fast, reproducible PROXY for the real
-    # question ("could one in-app Copilot have done this?"). That question is a
-    # capability judgment, so the agent may review each project and pass a
-    # `review = {"grade": "H|M|L", "why": "..."}`. When present it OVERRIDES the
-    # rule grade and is flagged method="AI-reviewed"; the rule grade is kept as
-    # rule_grade for transparency. Absent a review, the rule grade stands.
-    if review and review.get("grade") in ("H", "M", "L"):
+    # question ("could one in-app Copilot have done this?"). The agent may pass a
+    # `review = {"grade": "H|M|L|?", "why", "label", "resolves_evidence"|"conflict"}`.
+    # It OVERRIDES the rule grade (kept as rule_grade), flagged method="AI-reviewed".
+    # GUARD: the review may NOT silently downgrade hard evidence — a verified cross-app
+    # H cannot drop to L, and an automation-floored M cannot drop below M — unless it
+    # EXPLICITLY resolves the conflict (`resolves_evidence` truthy, or a `conflict` note).
+    if review and review.get("grade") in ("H", "M", "L", "?"):
         new_grade = review["grade"]
+        resolved = bool(review.get("resolves_evidence") or review.get("conflict"))
+        blocked = (not resolved) and (
+            (grade == "H" and verified_cross_app and new_grade == "L") or
+            (grade == "M" and automation_kind and new_grade in ("L", "?")))
+        if blocked:
+            result["method"] = "AI-review-rejected"
+            result["review_grade"] = new_grade
+            if review.get("why"): result["review_why"] = review["why"]
+            return result
         result["rule_grade"] = grade
         result["grade"] = new_grade
         if review.get("why"): result["why"] = review["why"]
         if review.get("label"):
             result["label"] = review["label"]
         elif new_grade != grade:
-            # Grade moved — regenerate the label so it matches the NEW grade. An
-            # upgraded High must justify Cowork, never inherit the rule's
-            # "<app> Copilot could do it" single-app label.
-            result["label"] = CF_REVIEW_LABELS[new_grade]
+            # Grade moved — regenerate the label so it matches the NEW grade.
+            result["label"] = CF_REVIEW_LABELS.get(new_grade, result["label"])
         result["method"] = "AI-reviewed" if new_grade != grade else "AI-confirmed"
+        result["evidence"] = ("insufficient" if new_grade == "?" else
+                              "verified" if verified_apps else "inferred")
     return result
 
 
@@ -483,7 +521,9 @@ def main(inp,out):
                       "total_interactions":interactions_lookup.get(str(sid)) or interactions_lookup.get(str(sid)[:8]),
                       "cowork_fit":cowork_fit(goal,outputs,inputs,cats,prof_roles,
                           extra_surfaces=set().union(*[deliv_surfaces.get(art_base(_name(o)).lower(),set()) for o in outputs]) if outputs else set(),
-                          review=s.get("cowork_fit_review")),
+                          review=s.get("cowork_fit_review"),
+                          evidence={"apps":s.get("apps_accessed"),"actions":s.get("actions"),
+                                    "sources":s.get("sources_reviewed")}),
                       "conversational":(len(outputs)==0)})
         if not outputs: conv+=1
 
@@ -562,7 +602,8 @@ def main(inp,out):
      "cowork_fit_summary":{
          "H":sum(1 for g in goals if g["cowork_fit"]["grade"]=="H"),
          "M":sum(1 for g in goals if g["cowork_fit"]["grade"]=="M"),
-         "L":sum(1 for g in goals if g["cowork_fit"]["grade"]=="L")},
+         "L":sum(1 for g in goals if g["cowork_fit"]["grade"]=="L"),
+         "U":sum(1 for g in goals if g["cowork_fit"]["grade"]=="?")},
      "tasks":tasks,"artifacts":artifacts,
     }
     json.dump(payload,open(out,"w"),indent=1)

@@ -47,7 +47,7 @@ def main(transcript, out, log=None):
     if not transcript or not os.path.exists(transcript):
         print("No transcript found"); return
     sid=os.path.splitext(os.path.basename(transcript))[0]
-    tools={}; ntool=0; nuser=0; nasst=0; ts=[]; artifacts=set()
+    tools={}; ntool=0; nuser=0; nasst=0; ts=[]; artifacts=set(); action_seq=[]
     for ln in open(transcript):
         try: o=json.loads(ln)
         except Exception: continue
@@ -63,7 +63,7 @@ def main(transcript, out, log=None):
             for c in content:
                 if not isinstance(c,dict): continue
                 if c.get("type")=="tool_use":
-                    ntool+=1; nm=c.get("name","?"); tools[nm]=tools.get(nm,0)+1
+                    ntool+=1; nm=c.get("name","?"); tools[nm]=tools.get(nm,0)+1; action_seq.append(nm)
                     inp=c.get("input",{}) or {}
                     fp=inp.get("file_path") or inp.get("out") or ""
                     if isinstance(fp,str) and "/output/" in fp:
@@ -119,10 +119,35 @@ def main(transcript, out, log=None):
     if _cm: runs_est["comms"]=max(1,round(_cm/4))
     if _mt: runs_est["meeting"]=max(1,round(_mt/3))
 
+    # ---- workflow evidence: which APPS the actions actually touched, and how many
+    #      SOURCES were reviewed. This is action-grounded proof of what Cowork DID —
+    #      compute.py's cowork_fit unions these verified apps with the ones inferred from
+    #      outputs, so a cross-app workflow (e.g. Outlook + Excel) is graded on evidence,
+    #      not on the single file that happened to land in OneDrive. Prefix match; the
+    #      calendar prefix is tested before mail (mcp__outlook_calendar__ vs mcp__outlook__).
+    TOOL_APP=[("mcp__outlook_calendar__","Teams"),
+              ("mcp__graph__GetMyRecentTranscripts","Teams"),
+              ("mcp__m365_teams__","Teams"),
+              ("mcp__outlook__","Outlook"),
+              ("mcp__excel","Excel"),("mcp__word","Word"),("mcp__powerpoint","PowerPoint")]
+    _SOURCE_PREFIXES=("mcp__m365_search__","mcp__core__web_search","mcp__core__web_fetch",
+                      "mcp__graph__QueryGraph","mcp__sharepoint_onedrive__SearchDrive",
+                      "mcp__sharepoint_onedrive__ReadFileContent")
+    apps=set(); sources=0
+    for k,v in tools.items():
+        for pre,app in TOOL_APP:
+            if k==pre or k.startswith(pre):
+                apps.add(app); break
+        if any(k==p or k.startswith(p) for p in _SOURCE_PREFIXES):
+            sources+=v
+    # distinct action names in first-seen order (the workflow trace, deduped)
+    seen=set(); actions=[a for a in action_seq if not (a in seen or seen.add(a))]
+    title=find_title()
+
     rec={
         "id": sid[:8],
         "session_id": sid,
-        "goal": find_title(),
+        "goal": title,
         "start": min(ts).isoformat() if ts else None,
         "end": max(ts).isoformat() if ts else None,
         "exec_min": exec_min,
@@ -133,6 +158,10 @@ def main(transcript, out, log=None):
         "turns": {"user": nuser, "assistant": nasst},
         "artifacts": sorted(artifacts),
         "produced_artifact": bool(artifacts),
+        "request": title,
+        "actions": actions,
+        "apps_accessed": sorted(apps),
+        "sources_reviewed": sources,
         "source": "session-transcript",
     }
     json.dump(rec, open(out,"w"), indent=1)

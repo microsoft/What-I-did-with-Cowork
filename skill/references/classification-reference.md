@@ -27,8 +27,18 @@ The raw harvest you write to `working/cowork_raw.json` (input to `classify.py`):
                  "outputs": [{"name":"deck.pptx","ext":"pptx","skills":["Presentation Design","Data Analysis"]}, ...],
                  "skills": ["Data Analysis"],
                  "professional_roles": ["Data Analyst","Management Consultant"],
+                 "request":"<original ask>", "actions":["mcp__outlook__ListMessages","Write", ...],
+                 "apps_accessed":["Outlook","Excel"], "sources_reviewed":<int>,
                  "has_folder":true, "exec_min":<measured minutes|null>}, ... ] }
 ```
 `classify.py` adds the `tasks` array (categories) and writes `working/cowork_sessions.json`. Where a live
 `session_telemetry.json` exists for a session, prefer its measured `exec_min`, tool counts and `produced_artifact`
 flag over the file-timestamp estimate.
+
+**Workflow evidence (`request` / `actions` / `apps_accessed` / `sources_reviewed`).** These are the
+action-grounded record of *what Cowork did* — mined by `mine_session.py` from the transcript. `compute.py`'s
+Cowork-fit unions the **verified** `apps_accessed` with the apps **inferred** from outputs, so a cross-app
+workflow (e.g. Outlook + Excel) grades **H** on evidence, not on the single file that landed in OneDrive.
+**Populate them only when the action history is actually available; leave them ABSENT (not `[]`) when it is
+not** — their absence is the signal that the assessment must fall back to **"Insufficient evidence"** rather
+than assume a single-app workflow from a lone output.
