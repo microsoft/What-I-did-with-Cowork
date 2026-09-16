@@ -96,41 +96,40 @@ evidence** (the apps its actions touched, the sources it reviewed, and its outpu
 not merely the file it saved. An Excel-only *output* does **not** establish an
 Excel-only *workflow*. The grader unions the **verified** apps from the action trace
 (`apps_accessed`) with the apps **inferred** from outputs and related sessions; a
-cross-app workflow (e.g. Outlook + Excel) is **H**. When **no action history is
-available**, a lone output cannot prove a single app, so the assessment is
-**"? — Insufficient evidence"** rather than a confident **L**.
+cross-app workflow (e.g. Outlook + Excel) is **H**. A missing action trace does **not**
+by itself force abstention — the grader still infers the fit from the outputs, goal and
+related sessions. Only when there is **no basis at all** (a saved artifact of an
+unrecognized type, with no build / automation / multi-file / cross-app signal and no
+trace) is the assessment left as **"? — Insufficient evidence"** rather than guessed.
+This is deliberately **rare**.
 
 | Grade | Colour | Meaning |
 |---|---|---|
-| **H — High** | Green | Cowork was genuinely needed (build / automation / cross-app). Cross-app confirmed by the action trace is *verified*. |
-| **M — Moderate** | Yellow | Moderate fit — a mostly single-surface task that still means juggling many files, synthesizing across multiple file formats, or an automation-style run. |
-| **L — Low** | Red | The action trace confirms one in-app Copilot could have done it end-to-end. |
-| **? — Insufficient evidence** | Grey | No action history — a lone saved file can't establish a single-app workflow, so it is left unassessed, not assumed Low. |
+| **H — High** | Green | Cowork was genuinely needed: **≥2 apps in play**, or the output shows **code generation, automation/workflow, multi-document synthesis, or multiple different output formats**. Cross-app confirmed by the action trace is *verified*. |
+| **M — Moderate** | Yellow | Moderate fit — a single-surface task that still means **multi-format input** (reading two or more formats) or juggling a **large number of files**, or a lightweight Cowork-platform op. |
+| **L — Low** | Red | One in-app Copilot could have done it end-to-end — a single app/output, or a purely conversational task. |
+| **? — Insufficient evidence** | Grey | **Rare.** Only when there is no basis at all — an unrecognized output type with no code/automation/multi-format/cross-app signal and no action trace. A missing trace alone does not trigger this; the grader still infers from outputs/goal/related sessions. |
 
 ### Layer 1 — the deterministic rule (baseline)
 
-A session is graded **High** if **any** of these holds:
+The rule walks a strict **hierarchy**, taking the first grade that matches:
 
-1. **It builds or packages** a skill, app, script, or code.
-2. **It runs a cross-system automation** — browser automation, a connector, or an
-   executed sweep.
-3. **It is a Specialized workflow** — automation, connectors, scheduled/recurring
-   prompts, or skill setup. *Specialized workflows are Cowork-native and score High
-   almost every time; no in-app Copilot runs them.*
-4. **It synthesizes more than 5 sources** at once.
-5. **It spans two or more Copilot surfaces** (e.g. find the emails in **Outlook**,
-   then build the tracker in **Excel**).
-
-Otherwise it is **Low** (all in one in-app surface, or a quick conversational task),
-**unless** one of the Moderate floors applies — a single-surface task is lifted from
-Low to **Moderate** when it:
-
-- involves **automation** — inbox triage, channel scan, sweep, workflow, recurring or
-  batch run. *An automation-style process can never be graded Low*; or
-- juggles a **large number of files**, performs **multi-file-format synthesis** (inputs
-  spanning two or more formats), or generates **multiple outputs from multi-format
-  inputs**; or
-- is a lightweight **Cowork-platform op** (install / share / schedule a skill or prompt).
+1. **≥2 apps in play → High.** Count the apps: those the actions *touched* (verified,
+   e.g. Outlook + Excel) unioned with those *inferred* from outputs, goal (a
+   "sharing"/distribution goal implies Outlook), and related sessions. Two or more → High
+   immediately.
+2. **Output signals → High.** Otherwise, if the work involved **code generation**, an
+   **automation / workflow** (inbox triage, channel scan, sweep, connector, recurring
+   run, Specialized workflow), **multi-document synthesis** (several docs across ≥2
+   formats, or >5 sources), or **multiple different output formats** → High.
+   *An automation-style process is never graded below High.*
+3. **Purely conversational → Low.** No output and no other app needed — Copilot chat
+   would have covered it.
+4. **Moderate multi-format / volume → Moderate.** A single-surface task that still reads
+   **two or more input formats**, juggles a **large number of files**, or is a
+   lightweight **Cowork-platform op** (install / share / schedule a skill or prompt).
+5. **Single app a lone Copilot could do → Low.** Exactly one surface/output.
+6. **Truly no signal → "?"** (rare) — see the grade table above.
 
 **Cross-session orchestration.** A deliverable built across two sessions — e.g.
 identify the emails in one session, build the Excel tracker in another — unions the

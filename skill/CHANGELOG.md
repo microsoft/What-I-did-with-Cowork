@@ -2,6 +2,38 @@
 
 ---
 
+## v41 — Cowork-fit: strict H/M/L/? hierarchy; `?` used sparingly; automation → High
+
+Reworks the deterministic grader into an explicit, evidence-first hierarchy and fixes the
+over-use of the "Insufficient evidence" (`?`) grade.
+
+### Cowork-fit classifier (`scripts/compute.py`)
+- **Strict hierarchy (first match wins):** (1) **≥2 apps in play** — apps the actions
+  touched (verified) unioned with apps inferred from outputs, goal and related sessions —
+  → **H**; (2) output shows **code generation, automation/workflow, multi-document
+  synthesis, or multiple different output formats** → **H**; (3) purely **conversational**
+  → **L**; (4) **multi-format input / many files / platform op** → **M**; (5) single
+  app/output a lone Copilot could do → **L**; (6) truly no signal → **`?`**.
+- **`?` is now rare.** A missing action trace no longer forces `?` — the grade is still
+  inferred from outputs, goal and related sessions. `?` is reserved for a saved output of
+  an unrecognized type with no code/automation/multi-format/cross-app signal and no trace.
+  (Previously any trace-less session collapsed to `?`.)
+- **Automation / workflow is now High** (was floored to Moderate) — inbox triage, channel
+  scan, sweep, connector, recurring/workflow runs.
+- **Better cross-app inference:** a *sharing / distribution* goal now implies Outlook, so
+  e.g. a "value story sharing tracker" saved as `.xlsx` reads as Outlook + Excel → **H**.
+- **Moderate is now the true middle:** multi-format *input* (≥2 input formats) or juggling
+  a large number of files, or a lightweight Cowork-platform op.
+- **AI-review guard** generalized: the review can't silently downgrade a strong **H**
+  (verified cross-app, automation/workflow, or build) to **L/`?`** without explicitly
+  resolving the conflict (else flagged **AI-review-rejected**).
+
+### Report & docs (`scripts/build_report.py`, `SKILL.md`, `classification-methodology.md`)
+- Glossary, legend, KPI copy and methodology rewritten to describe the hierarchy and the
+  rare `?` state.
+
+---
+
 ## v40 — Cowork-fit: evidence-based grading (assess what Cowork *did*, not just the file)
 
 The classifier now grades the **workflow** — the apps its actions touched, the sources it

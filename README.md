@@ -25,7 +25,7 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 
 **Let Cowork install it for you (easiest):**
 
-1. **Download** the latest version: [`cowork-roi-report-skill-v40.zip`](cowork-roi-report-skill-v40.zip) *(no need to unzip — attach it as-is)*
+1. **Download** the latest version: [`cowork-roi-report-skill-v41.zip`](cowork-roi-report-skill-v41.zip) *(no need to unzip — attach it as-is)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session
 3. **Click the ➕ (plus) symbol** to attach the zip file, then send:
 
@@ -36,8 +36,8 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 
 | Version | File | Status |
 |---|---|---|
-| **v40** | [`cowork-roi-report-skill-v40.zip`](cowork-roi-report-skill-v40.zip) | ✅ **Latest version** — recommended |
-| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v39) |
+| **v41** | [`cowork-roi-report-skill-v41.zip`](cowork-roi-report-skill-v41.zip) | ✅ **Latest version** — recommended |
+| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v40) |
 
 ---
 
@@ -47,11 +47,6 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 The report leads with research-anchored **Time Saved** (conservative / typical / optimistic) and a **professional-services equivalent** — what that expert time would cost at your hourly rate.
 
 ![Time Saved hero](images/report-hero.png)
-
-### KPIs
-Headline KPIs — sessions, run tasks, deliverables, active days, expert-equivalent hours — followed by the secondary, rate-independent speed multiplier.
-
-![KPIs](images/report-kpis.png)
 
 ### Where the time went — by task category
 See where your time went across the research-anchored task categories, each valued at its cited per-task band.
@@ -139,7 +134,7 @@ Sources: Stanford-WB, Microsoft Research, NBER, Forrester — all clickable in t
 cowork-roi-report/
 ├── SKILL.md                     # skill definition + workflow (loaded by Cowork)
 ├── README.md                    # technical documentation
-├── CHANGELOG.md                 # consolidated version history (latest: v40 evidence-based Cowork-fit)
+├── CHANGELOG.md                 # consolidated version history (latest: v41 Cowork-fit hierarchy)
 ├── scripts/
 │   ├── reconcile_taxonomy.py    # align-first/create-if-novel; owner-scoped registry; runs before classify.py
 │   ├── classify.py              # deterministic ext→category classifier
@@ -189,6 +184,7 @@ python scripts/to_csv.py       --data working/cowork_roi_data.json --out output/
 
 ## What's new
 
+- **v41** — Cowork-fit is now a strict **H/M/L/? hierarchy**: ≥2 apps in play → **High**; code generation, automation/workflow, multi-doc synthesis, or multiple output formats → **High** (automation is never below High); multi-format input / many files → **Moderate**; single app/output or conversational → **Low**. The **`?` (Insufficient evidence)** grade is now **rare** — a missing action trace no longer collapses to `?`, since the grade is still inferred from outputs/goal/related sessions.
 - **v40** — Cowork-fit is now **evidence-based**: it grades what Cowork *did* (the apps its actions touched, sources reviewed, and outputs), not just the one saved file. Cross-app workflows (e.g. **Outlook + Excel → High**) are graded on evidence; when no action history exists the work is marked **Insufficient evidence** instead of defaulting to Low; and the AI review can't downgrade verified cross-app work to Low, or automation below Moderate, without resolving the conflict. CSV gains evidence/apps columns.
 - **v39** — Cowork-fit refinements: automation-style work (inbox triage, channel scan, workflow) can never grade **Low**, and **Moderate fit** now also covers multi-file / multi-format synthesis. Report output shows **dates only** (no timestamps) and drops meta caveat sections.
 - **v38** — fixes telemetry undercount for surface-based categories: Outlook-mail sessions now credit **Email**, Teams sessions credit **Communication**, and transcript/calendar sessions credit **Meeting**, instead of being mislabeled as Analysis or dropped entirely.
