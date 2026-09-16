@@ -1,11 +1,9 @@
 ---
 name: cowork-roi-report
 description: |
-  Generates a Microsoft-branded "What Cowork Did for Me" self-contained HTML impact report from the
-  signed-in user's own Copilot Cowork session history in OneDrive. Quantifies leverage as a speed
-  multiplier and a professional-services-equivalent value using research-anchored task-category bands
-  and an artifact-scaled two-clock model, with a live hourly-rate control, KPIs, a work-by-business-process
-  breakdown, a projects-by-category view, and an activity heatmap.
+  Generates a personal "What Cowork Did for Me" HTML impact report from the signed-in user's
+  own Copilot Cowork history in OneDrive, with estimated time savings, professional-services
+  value, and breakdowns by process, project and category.
 
   Use when the user asks to "generate my impact summary report", "generate my impact report",
   "my impact summary", "my Cowork ROI", "what Cowork did for me", "Cowork impact report",
@@ -14,9 +12,10 @@ description: |
 
   Do NOT use for: GitHub Copilot / IDE reports, team-wide announcements, single-meeting summaries,
   or daily briefings.
-cowork:
+metadata:
   category: analysis
   icon: BarChart4
+  version: "42"
 ---
 
 # Cowork ROI — Impact Report Generator
@@ -85,6 +84,7 @@ signal. Harvest **all three** layouts (users/versions differ):
   READMEs, lock files) into the session's primary deliverable. Keep output-less sessions (empty `outputs` →
   `classify.py` tags `general`).
 - **Live-session telemetry.** `mine_session.py --log …/cowork-session-telemetry.json` logs each session's `exec_min`, tool intensity and artifacts. In the harvest, **merge in any session id not covered by a Cowork folder** (`has_folder:false`, `outputs:[]`); prefer telemetry `exec_min` where both exist. Forward-only.
+- **First-run telemetry hook check:** if `/mnt/user-config/settings.json` is missing or lacks a Stop hook pointing to an existing `mine_session.py`, tell the user **the forward-capture hook is not active**; do not silently enable it. The installed path is `/mnt/user-config/skills/cowork-roi-report/scripts/mine_session.py`. OneDrive holds only file artifacts; historical chat-only recovery requires the Cowork app's session list, not this forward-only log.
 
 ### 4. Classify each session into run tasks (the methodology)
 A **session** contains one or more **run tasks**; each run task maps to exactly one of the eight categories

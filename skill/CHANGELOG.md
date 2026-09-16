@@ -2,6 +2,32 @@
 
 ---
 
+## v42 — Restore current-runtime chat-only capture and fix installed hook paths
+
+Repairs forward capture for the current Copilot runtime, shared with member skill v26.
+This release follows v41; earlier telemetry-category fixes remain unchanged.
+
+### Telemetry capture (`scripts/mine_session.py`)
+- Discover current `.copilot-state/*/session-state/*/events.jsonl`, while retaining both
+  legacy transcript patterns and the existing `--transcript`, `--out`, and `--log` options.
+- Parse current session ids, first-user-message titles (attachment/date tags stripped),
+  timestamps, message counts, tool starts, and transcript-backed output artifacts.
+- Normalize `server-Tool` names before the existing app/source/category rules, preserving
+  email, communication, meeting, code and analysis runs without double-counting tool requests.
+
+### Hooks & documentation (`settings.json`, `SKILL.md`, `README.md`)
+- Correct the Stop/statusLine commands to `/mnt/user-config/skills/cowork-roi-report/scripts/`;
+  keep `/mnt/user-config/.claude/cowork-session-telemetry.json` and all other settings unchanged.
+- Add the first-run hook check and distinguish forward capture from historical chat-only
+  backfill. OneDrive holds file artifacts; past chat-only recovery requires consent-based
+  enumeration of the Cowork app's title/date session list (member v26 documents the privacy gate).
+
+No classifier, Cowork-fit hierarchy, value-model or credits change. No historical backfill is
+performed by this update; automatic hook execution still depends on runtime activation/support.
+Full release notes: [CHANGELOG-v42.md](CHANGELOG-v42.md).
+
+---
+
 ## v41 — Cowork-fit: strict H/M/L/? hierarchy; `?` used sparingly; automation → High
 
 Reworks the deterministic grader into an explicit, evidence-first hierarchy and fixes the

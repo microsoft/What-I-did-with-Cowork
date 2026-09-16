@@ -1,5 +1,8 @@
 # Cowork ROI — Personal Impact Report (skill)
 
+**Current installed release: v42** — current-runtime chat-only capture; see
+[CHANGELOG-v42.md](CHANGELOG-v42.md). The shared parser matches member skill v26.
+
 Generates a Microsoft-branded **"What Cowork Did for Me"** single-file HTML report from your own
 Copilot Cowork session history in OneDrive. It leads with **research-anchored Time Saved** and its
 **professional-services-equivalent Value**, then maps your work to your own Jobs, Business Processes,
@@ -47,7 +50,8 @@ You'll be asked which period to measure (7, 15 or 30 days), then the report is b
 cowork-roi-report/
 ├── SKILL.md                     # skill definition + workflow (loaded by Cowork)
 ├── README.md                    # this file
-├── CHANGELOG-v20.md             # latest — value model = runs × band (methodology-deck-anchored)
+├── CHANGELOG-v42.md             # latest — current-runtime chat-only session capture
+├── CHANGELOG-v20.md             # value model = runs × band (methodology-deck-anchored)
 ├── CHANGELOG-v19.md             # real /cost credits via browser sweep, Credits·cost column
 ├── CHANGELOG-v18.md             # Cowork-app allow-list harvest, Scout excluded
 ├── CHANGELOG-v15.md             # (+ v5/v6/v11/v13/v14/v15/v16 history)
@@ -176,14 +180,23 @@ report's Glossary and in `build_report.py`.
 Two `settings.json` hooks enrich the report over time (both forward-looking — they can't backfill
 past sessions). Wire them once, then activate by opening `/hooks` or restarting:
 
-- **statusLine → `statusline_cost.py`** logs each live session's real cost to
+- **statusLine → `/mnt/user-config/skills/cowork-roi-report/scripts/statusline_cost.py`** logs each live session's real cost to
   `cowork-session-costs.json`, filling the session-cost column. (The column auto-hides when there's
   no cost data.)
-- **Stop hook → `mine_session.py --log …cowork-session-telemetry.json`** records every session
+- **Stop hook → `/mnt/user-config/skills/cowork-roi-report/scripts/mine_session.py --log /mnt/user-config/.claude/cowork-session-telemetry.json`** records every session
   (run-time, tools, artifacts, `produced_artifact`) so **chat-only / folder-less sessions are
   counted**, not just those that saved a file.
 
-Only the *live* session is minable, so the logs build forward as you use Cowork.
+**First-run telemetry hook check:** if `/mnt/user-config/settings.json` is missing or lacks a Stop
+hook pointing to an existing `mine_session.py`, the skill tells you **the forward-capture hook is
+not active**. Keep one capture hook, not duplicate hooks for both sibling skills.
+
+Only the *live* session is minable, so the logs build forward as you use Cowork. The parser supports
+current `.copilot-state/*/session-state/*/events.jsonl` and legacy Claude JSONL. OneDrive holds only
+file artifacts: past chat-only sessions require separately enumerating the Cowork app's session
+list with user consent (titles/dates only, never chat contents/prompts). Repairing this hook does
+not backfill history. Without browser access, disclose the gap instead of guessing. Hook execution
+depends on runtime support/activation; a corrected command is not proof that the hook has fired.
 
 ---
 
