@@ -23,6 +23,8 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 
 ## Installation
 
+> **Recommended:** run this on the **web version of Cowork** — [aka.ms/cowork](https://aka.ms/cowork). The web app enables **UI automation fallback**, letting the skill drive the browser to complete certain scenarios (e.g. reading per-session `/cost` credits) that aren't available in the native app.
+
 **Let Cowork install it for you (easiest):**
 
 1. **Download** the latest version: [`cowork-roi-report-skill-v41.zip`](cowork-roi-report-skill-v41.zip) *(no need to unzip — attach it as-is)*
