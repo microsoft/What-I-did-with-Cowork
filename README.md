@@ -55,12 +55,12 @@ The report leads with research-anchored **Time Saved** (conservative / typical /
 ### Where the time went — by task category
 See where your time went across the research-anchored task categories, each valued at its cited per-task band.
 
-![Categories breakdown](images/report-categories.png)
+![Categories breakdown](images/report-roles.png)
 
 ### Your projects
 One canonical **Your projects** table lists every project once — group it by **Business Process** or **task Category** in place. Each row carries its **Cowork-fit** grade, roles, hours, and value, all derived from your own footprint at run time.
 
-![Your projects](images/report-process.png)
+![Your projects](images/report-projects.png)
 
 ### Cowork-fit — did the work need Cowork?
 Every project gets a **High / Medium / Low** grade from the *single-surface test*: could one in-app Copilot (Excel, Word, Outlook, Teams, chat) have done it end-to-end? A deterministic rule sets a reproducible baseline; an optional LLM review can confirm or adjust it. Each grade's hover shows the reason **and** the method (rule-based / AI-confirmed / AI-reviewed).
