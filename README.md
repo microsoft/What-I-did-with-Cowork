@@ -4,7 +4,7 @@
 
 ![Report Hero](images/report-hero.png)
 
-> 📄 **See a live example:** [`cowork-roi-report-demo.html`](cowork-roi-report-demo.html) — a self-contained demo report built from synthetic sessions ([`skill/examples/demo_sessions.json`](skill/examples/demo_sessions.json)). Download and open it in any browser (no real data).
+> 📄 **See a live example:** [`cowork-roi-report-demo.pdf`](cowork-roi-report-demo.pdf) — a demo report built from synthetic sessions ([`skill/examples/demo_sessions.json`](skill/examples/demo_sessions.json)). No real data.
 
 ---
 
