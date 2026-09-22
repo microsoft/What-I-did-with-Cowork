@@ -1,0 +1,248 @@
+1
+00:00:00,051 --> 00:00:01,873
+If you're using Copilot Cowork,
+
+2
+00:00:01,899 --> 00:00:03,415
+you can feel it saving you time —
+
+3
+00:00:03,442 --> 00:00:04,692
+but how do you prove it?
+
+4
+00:00:05,106 --> 00:00:07,393
+This Cowork skill does exactly that.
+
+5
+00:00:07,819 --> 00:00:08,936
+In a couple of clicks,
+
+6
+00:00:08,962 --> 00:00:10,691
+it turns the work you've already done
+
+7
+00:00:10,704 --> 00:00:12,992
+into a clean, shareable report with real
+
+8
+00:00:13,005 --> 00:00:14,095
+numbers behind it.
+
+9
+00:00:15,243 --> 00:00:16,612
+Right at the top is the number
+
+10
+00:00:16,626 --> 00:00:18,740
+that matters most — how much time Cowork
+
+11
+00:00:18,753 --> 00:00:19,405
+saved you.
+
+12
+00:00:19,830 --> 00:00:21,572
+Here it's about twenty-eight hours in a
+
+13
+00:00:21,586 --> 00:00:23,753
+month, shown as a range so you
+
+14
+00:00:23,767 --> 00:00:26,027
+can be more conservative or optimistic in
+
+15
+00:00:26,040 --> 00:00:27,982
+your assessment of the time savings.
+
+16
+00:00:28,407 --> 00:00:29,923
+Beside it is what that time is
+
+17
+00:00:29,937 --> 00:00:30,921
+worth at your rate —
+
+18
+00:00:30,947 --> 00:00:32,290
+which you can set yourself,
+
+19
+00:00:32,317 --> 00:00:34,259
+updating every figure instantly.
+
+20
+00:00:35,289 --> 00:00:36,819
+Below that is your value at a
+
+21
+00:00:36,832 --> 00:00:37,523
+glance.
+
+22
+00:00:37,949 --> 00:00:40,289
+Headline KPIs like Cowork sessions,
+
+23
+00:00:40,316 --> 00:00:43,135
+tasks completed, and expert-equivalent hours
+
+24
+00:00:43,148 --> 00:00:44,092
+sit in one row —
+
+25
+00:00:44,425 --> 00:00:47,510
+alongside your speed multiplier versus hands-on time.
+
+26
+00:00:48,553 --> 00:00:50,787
+Next you'll see the professional roles Cowork
+
+27
+00:00:50,800 --> 00:00:53,499
+stood in for — the specialist hats it
+
+28
+00:00:53,513 --> 00:00:55,295
+wore so the work got done without
+
+29
+00:00:55,308 --> 00:00:56,265
+added headcount.
+
+30
+00:00:56,691 --> 00:00:59,271
+Engineer, analyst, writer, and more,
+
+31
+00:00:59,563 --> 00:01:01,172
+laid out in a heatmap that shows
+
+32
+00:01:01,186 --> 00:01:02,888
+where each role was applied across your
+
+33
+00:01:02,901 --> 00:01:03,380
+work.
+
+34
+00:01:04,413 --> 00:01:06,101
+Then all your projects sit in one
+
+35
+00:01:06,115 --> 00:01:09,346
+table, grouped by process or by category.
+
+36
+00:01:09,745 --> 00:01:11,168
+And here's the best part.
+
+37
+00:01:11,593 --> 00:01:13,734
+Every project gets a Cowork-fit grade —
+
+38
+00:01:13,761 --> 00:01:15,131
+high, medium, or low.
+
+39
+00:01:15,556 --> 00:01:17,085
+Did it really need Cowork,
+
+40
+00:01:17,325 --> 00:01:19,226
+or could a Copilot inside a single
+
+41
+00:01:19,240 --> 00:01:20,144
+app have done it?
+
+42
+00:01:20,569 --> 00:01:22,644
+That's what makes it easy to trust.
+
+43
+00:01:23,683 --> 00:01:24,733
+On the resource hub,
+
+44
+00:01:25,039 --> 00:01:26,914
+each card lists its repo link right
+
+45
+00:01:26,927 --> 00:01:29,268
+at the top — just click 'View repo'
+
+46
+00:01:29,281 --> 00:01:31,196
+to open it and download the skill.
+
+47
+00:01:32,223 --> 00:01:33,486
+Now run the report.
+
+48
+00:01:33,911 --> 00:01:35,401
+Open Copilot Cowork in
+
+49
+00:01:35,414 --> 00:01:36,651
+Teams or the web app,
+
+50
+00:01:36,970 --> 00:01:38,592
+and download the skill zip from the
+
+51
+00:01:38,606 --> 00:01:39,151
+repo.
+
+52
+00:01:39,563 --> 00:01:41,770
+Attach it to a new Cowork conversation
+
+53
+00:01:41,784 --> 00:01:43,871
+and ask Cowork to install the skill.
+
+54
+00:01:44,297 --> 00:01:46,172
+Then ask it to generate your impact
+
+55
+00:01:46,185 --> 00:01:48,965
+summary report — it reads your own history
+
+56
+00:01:48,978 --> 00:01:51,770
+from OneDrive, so your data stays yours.
+
+57
+00:01:52,813 --> 00:01:53,956
+So that's 'What Cowork
+
+58
+00:01:53,969 --> 00:01:56,110
+Did for Me' — a simple way to
+
+59
+00:01:56,124 --> 00:01:57,307
+prove the value of your
+
+60
+00:01:57,321 --> 00:01:58,092
+AI work.
+
+61
+00:01:58,517 --> 00:02:00,818
+Install the skill, generate your report,
+
+62
+00:02:01,017 --> 00:02:02,972
+and see your own time saved story.
+
