@@ -12,7 +12,7 @@
 
 Plays here in the page — no download. A 2-minute overview — Time Saved and value, the KPIs and speed multiplier, the roles Cowork assembled, your projects with a Cowork-fit grade, and how to run the report.
 
-https://github.com/user-attachments/assets/c45d5e84-4fc3-4414-a941-0843b74219b0
+https://github.com/user-attachments/assets/1f4a006f-0970-48ce-994c-8e0c875b3ad9
 
 ▶️ **[Watch the 2-minute overview](media/What-Cowork-Did-For-Me-Overview.mp4)** &nbsp;·&nbsp; captions: [`.srt`](media/What-Cowork-Did-For-Me-Overview.srt)
 
