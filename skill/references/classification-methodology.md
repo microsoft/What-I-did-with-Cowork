@@ -131,6 +131,46 @@ The rule walks a strict **hierarchy**, taking the first grade that matches:
 5. **Single app a lone Copilot could do → Low.** Exactly one surface/output.
 6. **Truly no signal → "?"** (rare) — see the grade table above.
 
+### The exact signals (as implemented in `compute.py :: cowork_fit`)
+
+Every signal below is computed mechanically from the harvest — outputs, inputs, goal
+text, categories, roles, related-session surfaces, and the mined action trace. The
+first rule that fires in the order above wins.
+
+- **Apps in play (`surfaces`)** — the **union** of: apps the **action trace verified**
+  (`evidence.apps`); apps **inferred from output extensions**
+  (`.xlsx/.xlsm/.xls/.csv/.tsv → Excel`, `.docx/.doc/.pdf/.rtf → Word`,
+  `.pptx/.ppt → PowerPoint`); apps **inferred from the goal / category** — *email ·
+  inbox · reply · triage · share · distribute · notify · broadcast · circulate ·
+  outreach* (or the Email category) → **Outlook**; *meeting · transcript · recap ·
+  teams · standup* (or the Meeting / Communication categories) → **Teams**; *deck ·
+  slide · presentation · chart · visual · layout* → **PowerPoint**; and surfaces
+  **unioned from related sessions** building the same deliverable. **≥2 → High.**
+- **Build (`build`) → High** — an output with a code/app extension
+  (`.zip .py .ps1 .js .ts .ipynb .sh .html .htm`), or a goal to *build / create* a
+  *skill / package / bundle*, or to *build / create / generate / make / develop /
+  design* an *HTML dashboard / web app / website / microsite / landing page /
+  interactive report*.
+- **Automation (`automation_h`) → High (never graded lower)** — an **executed**
+  connector / browser-automation / integration / sweep run (*run · execute · sweep* +
+  a named connector — Dynamics 365 · ADO Boards · Power BI · Fabric · ServiceNow ·
+  Salesforce · SAP — or a produced output); **or** an automation keyword in the goal
+  (*triage · scan · sweep · automat · workflow · monitor · recurring · batch · bulk ·
+  orchestrat · pipeline · auto-*); **or** the **Specialized workflows** category.
+- **Multi-document synthesis (`multi_doc_synth`) → High** — **≥3 inputs across ≥2
+  formats**, or **>5 sources**.
+- **Multiple output formats (`multi_out_fmt`) → High** — **≥2 distinct output
+  extensions**.
+- **Conversational → Low** — **no outputs** and none of the High signals above.
+- **Moderate (`M`)** — a single-surface task that still reads **≥2 input formats**
+  (`multi_fmt_input`) or juggles **≥3 files in or out** (`many_files`); **or** a
+  lightweight **platform op** — a conversational *install / set up / schedule /
+  register / enable / add / share / attach* of a *skill / prompt / workspace /
+  automation / connector*.
+- **Single app → Low** — exactly one surface in play; the surface is named.
+- **No signal → "?"** — none of the above fired; left explicit rather than guessed
+  (deliberately rare).
+
 **Cross-session orchestration.** A deliverable built across two sessions — e.g.
 identify the emails in one session, build the Excel tracker in another — unions the
 surfaces from every contributing session, so it reads as **cross-surface (H)** in

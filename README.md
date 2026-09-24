@@ -73,7 +73,14 @@ One canonical **Your projects** table lists every project once — group it by *
 ![Your projects](images/report-projects.png)
 
 ### Cowork-fit — did the work need Cowork?
-Every project gets a **High / Medium / Low** grade from the *single-surface test*: could one in-app Copilot (Excel, Word, Outlook, Teams, chat) have done it end-to-end? A deterministic rule sets a reproducible baseline; an optional LLM review can confirm or adjust it. Each grade's hover shows the reason **and** the method (rule-based / AI-confirmed / AI-reviewed).
+Every project gets a grade from the *single-surface test*: could one in-app Copilot (Excel, Word, PowerPoint, Outlook, Teams, or chat) have done it end-to-end? A **deterministic rule** walks a strict **H → M → L → ?** hierarchy and sets a reproducible baseline; an optional **LLM review** can confirm or adjust it.
+
+- **H (High)** — **≥2 apps in play**, or the work shows **code/app/skill build**, **automation / workflow** (never graded lower), **multi-document synthesis** (≥3 inputs across ≥2 formats, or >5 sources), or **≥2 output formats**.
+- **M (Moderate)** — a single-surface task that still reads **≥2 input formats** or juggles **≥3 files**, or a lightweight **Cowork-platform op** (install / share / schedule a skill or prompt).
+- **L (Low)** — exactly **one** in-app surface, or a purely **conversational** task.
+- **? (Insufficient evidence)** — *rare*: an unrecognized output with no build / automation / multi-format / cross-app signal and no action trace; left explicit, not guessed.
+
+Apps in play are the union of surfaces **verified** from the mined action trace, **inferred** from output extensions and goal text, and unioned from **related sessions**. The review is **guardrailed**: it can't quietly downgrade a verified cross-app or automation grade without resolving the conflicting evidence (rejected attempts are flagged **AI-review-rejected**). Each grade's hover shows the reason **and** the method (rule-based / AI-confirmed / AI-reviewed).
 
 ### Roles Cowork assembled — with a Projects × Roles heatmap
 The professional roles a billing firm would charge for your work, each linked to a job search, plus a **Projects × Roles heatmap** whose cells reconcile exactly to the role and project totals.
@@ -83,7 +90,7 @@ The professional roles a billing firm would charge for your work, each linked to
 - **KPIs** — sessions, run tasks, deliverables, active days, expert-equivalent hours
 - **Where the time went** — research-anchored time-savings bars by task category
 - **Your projects** — one table, groupable by Business Process or Category, each row with its Cowork-fit grade, roles, hours, and value
-- **Cowork-fit (H/M/L)** — per-project grade from the single-surface test (rule baseline + optional LLM review); reason and method on hover
+- **Cowork-fit (H/M/L/?)** — per-project grade from the single-surface test, decided by a strict H→M→L→? rule hierarchy plus an optional, guardrailed LLM review; reason and method on hover
 - **Roles Cowork assembled** — the professional roles a billing firm would charge for, each linked to a job search, plus a Projects × Roles heatmap
 - **Deliverables & the skills behind them** (collapsed)
 - **Methodology & glossary** — every band traceable, with clickable research sources
