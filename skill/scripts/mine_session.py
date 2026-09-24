@@ -97,7 +97,7 @@ def main(transcript, out, log=None):
     if not transcript or not os.path.exists(transcript):
         print("No transcript found"); return
     sid=os.path.splitext(os.path.basename(transcript))[0]
-    tools={}; ntool=0; nuser=0; nasst=0; ts=[]; artifacts=set(); action_seq=[]
+    tools={}; ntool=0; nuser=0; nasst=0; ts=[]; itimes=[]; artifacts=set(); action_seq=[]
     event_format=False; event_sid=None; title=None
     event_types={"session.start","session.resume","session.shutdown","user.message",
                  "assistant.message","tool.execution_start","tool.execution_complete"}
@@ -118,9 +118,11 @@ def main(transcript, out, log=None):
                     if isinstance(value,str) and value: event_sid=value
                 elif t=="user.message":
                     nuser+=1
+                    if d: itimes.append(d)  # per-turn time -> window vs lifetime split
                     if nuser==1: title=prompt_title(data.get("content"))
                 elif t=="assistant.message":
                     nasst+=1
+                    if d: itimes.append(d)  # per-turn time -> window vs lifetime split
                     requests=data.get("toolRequests") or []
                     if isinstance(requests,list):
                         for req in requests:
@@ -138,8 +140,12 @@ def main(transcript, out, log=None):
                 # Requests and completions do not double-count actual tool starts.
                 continue
             # Legacy Claude JSONL remains supported.
-            if t=="user": nuser+=1
-            elif t=="assistant": nasst+=1
+            if t=="user":
+                nuser+=1
+                if d: itimes.append(d)
+            elif t=="assistant":
+                nasst+=1
+                if d: itimes.append(d)
             content=as_dict(o.get("message")).get("content")
             if isinstance(content,list):
                 for c in content:
@@ -249,6 +255,10 @@ def main(transcript, out, log=None):
         "distinct_tools": len(tools),
         "runs": runs_est,
         "turns": {"user": nuser, "assistant": nasst},
+        # ISO timestamps of every user+assistant turn, so a report window can split
+        # interactions that happened INSIDE the period from the session's lifetime total
+        # (people re-open old sessions and re-prompt them).
+        "interaction_times": [x.isoformat() for x in sorted(itimes)],
         "artifacts": sorted(artifacts),
         "produced_artifact": bool(artifacts),
         # -- evidence fields: emitted here because a transcript WAS parsed (the action

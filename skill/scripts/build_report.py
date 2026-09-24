@@ -448,13 +448,21 @@ def build(data, out_path, anon=False):
     # ---- Server-side "Your projects" rows (never empty) + slim goals for the group dropdown ----
     CF_NAME={"H":"Needed Cowork (H)","M":"Moderate fit (M)","L":"Single-Copilot task (L)","?":"Insufficient evidence (?)"}
     pj_goals=[g for g in goals if g.get("minutes_typical",0)>0 or g.get("conversational")]
+    def _int_chip(g):
+        tot=g.get("total_interactions"); per=g.get("interactions_in_period")
+        if tot is None: return ""
+        if per is not None and per!=tot:
+            return (' <span class="pj-int" title="User+assistant turns \u2014 %d in this period, '
+                    '%d over the session lifetime (an earlier session re-prompted in-window)">'
+                    '\u21a9 %d in-period / %d total</span>')%(per,tot,per,tot)
+        return ' <span class="pj-int" title="User+assistant turns in this session">\U0001f4ac %d</span>'%tot
     def _pj_row(g):
         v=round(g.get("hours_typical",0)*rate)
         conv=' <span class="pj-conv">chat-only</span>' if g.get("conversational") else ""
-        return ('<tr><td class="pj-p"><span class="pj-t">%s</span>%s</td>'
+        return ('<tr><td class="pj-p"><span class="pj-t">%s</span>%s%s</td>'
                 '<td class="pj-cf">%s</td>'
                 '<td class="num">%.1fh</td><td class="num">$%s</td></tr>'
-                )%(esc(g["title"]),conv,cf_badge(g),
+                )%(esc(g["title"]),conv,_int_chip(g),cf_badge(g),
                    g.get("hours_typical",0),format(v,","))
     def pj_rows_grouped(group):
         gs=sorted(pj_goals,key=lambda x:-x.get("hours_typical",0))
@@ -488,7 +496,8 @@ def build(data, out_path, anon=False):
         "title":g.get("title",""),"process":g.get("process",""),
         "categories":g.get("categories") or [],
         "hours_typical":g.get("hours_typical",0),
-        "cowork_fit":{"grade":(g.get("cowork_fit") or {}).get("grade"),"label":(g.get("cowork_fit") or {}).get("label",""),"why":(g.get("cowork_fit") or {}).get("why",""),"method":(g.get("cowork_fit") or {}).get("method","rule")},"conversational":bool(g.get("conversational"))
+        "cowork_fit":{"grade":(g.get("cowork_fit") or {}).get("grade"),"label":(g.get("cowork_fit") or {}).get("label",""),"why":(g.get("cowork_fit") or {}).get("why",""),"method":(g.get("cowork_fit") or {}).get("method","rule")},"conversational":bool(g.get("conversational")),
+        "total_interactions":g.get("total_interactions"),"interactions_in_period":g.get("interactions_in_period")
     } for g in pj_goals])
 
     payload_json=json.dumps({
@@ -765,6 +774,7 @@ a{{color:var(--blue)}}
 .rp-h3{{font-size:16px;font-weight:700;margin:20px 0 4px}}
 .rp-h3 .sec{{color:var(--blue);margin-right:6px}}
 .pj-conv{{display:inline-block;background:#EFF6FC;color:var(--blue);border:1px solid #CFE4F7;border-radius:9px;padding:0 6px;font-size:9.5px;font-weight:700;margin-left:4px}}
+.pj-int{{display:inline-block;background:#F3F0FB;color:#6B2FA0;border:1px solid #E3D7F3;border-radius:9px;padding:0 6px;font-size:9.5px;font-weight:700;margin-left:4px;white-space:nowrap}}
 .pj-gh td{{background:#F7FBFF;border-top:2px solid #E4EEF8;padding:9px 14px}}
 .pj-gh-t{{font-weight:800;font-size:12.5px;color:var(--ink)}}
 .pj-gh-n{{font-size:11px;color:var(--mut);margin-left:10px;font-weight:600}}
@@ -973,7 +983,8 @@ function pjEsc(x){{return String(x==null?'':x).replace(/[&<>"]/g,function(c){{re
 var CF_METHOD={{rule:'rule-based','AI-reviewed':'AI-reviewed (adjusted from rule)','AI-confirmed':'AI-reviewed (confirmed rule)','AI-review-rejected':'AI review rejected — kept rule grade (evidence unresolved)'}};
 function pjBadge(cf){{if(!cf||!cf.grade)return '';var m=CF_METHOD[cf.method||'rule']||'rule-based';var tip=((cf.label||'')+(cf.why?(': '+cf.why):''))+'  ['+m+']';var gc=cf.grade==='?'?'U':cf.grade;return '<span class="cf cf-'+gc+'" title="'+pjEsc(tip||cf.grade)+'">'+cf.grade+'</span>';}}
 function pjRateVal(){{return parseFloat(document.getElementById('rate').value)||0;}}
-function pjRowsHtml(list,rate){{var h='';list.forEach(function(g){{var v=Math.round((g.hours_typical||0)*rate);var conv=g.conversational?' <span class="pj-conv">chat-only</span>':'';h+='<tr><td class="pj-p"><span class="pj-t">'+pjEsc(g.title)+'</span>'+conv+'</td>'+'<td class="pj-cf">'+pjBadge(g.cowork_fit)+'</td>'+'<td class="num">'+(g.hours_typical||0).toFixed(1)+'h</td>'+'<td class="num">$'+fmt(v)+'</td></tr>';}});return h;}}
+function pjIntChip(g){{if(g.total_interactions==null)return '';var tot=g.total_interactions,per=g.interactions_in_period;if(per!=null&&per!==tot)return ' <span class="pj-int" title="User+assistant turns \u2014 '+per+' in this period, '+tot+' over the session lifetime (an earlier session re-prompted in-window)">\u21a9 '+per+' in-period / '+tot+' total</span>';return ' <span class="pj-int" title="User+assistant turns in this session">\U0001f4ac '+tot+'</span>';}}
+function pjRowsHtml(list,rate){{var h='';list.forEach(function(g){{var v=Math.round((g.hours_typical||0)*rate);var conv=g.conversational?' <span class="pj-conv">chat-only</span>':'';h+='<tr><td class="pj-p"><span class="pj-t">'+pjEsc(g.title)+'</span>'+conv+pjIntChip(g)+'</td>'+'<td class="pj-cf">'+pjBadge(g.cowork_fit)+'</td>'+'<td class="num">'+(g.hours_typical||0).toFixed(1)+'h</td>'+'<td class="num">$'+fmt(v)+'</td></tr>';}});return h;}}
 function projRender(){{var tb=document.getElementById('projRows'); if(!tb)return; var rate=pjRateVal();
   var all=(DATA.goals||[]).filter(function(g){{return (g.hours_typical||0)>0||g.conversational;}});
   all.sort(function(a,b){{return (b.hours_typical||0)-(a.hours_typical||0);}});

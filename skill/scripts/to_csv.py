@@ -13,7 +13,10 @@ Design choices (see references/classification-methodology.md and the schema note
     a stable column order;
   * a run_id on every row makes appends across weekly runs safe;
   * blanks are honest n/a (e.g. credits/cost_usd without cost telemetry;
-    total_interactions without the live-session telemetry hook).
+    total_interactions / interactions_in_period without the live-session telemetry
+    hook). total_interactions is the session's LIFETIME user+assistant turn count;
+    interactions_in_period is only those turns whose timestamp falls inside the
+    report window (so a re-prompted old session shows fewer in-period than lifetime).
 
 This export is OPT-IN because it is an extra deliverable step. Its own credit cost
 is ~0 (a local, deterministic script — no model calls, no tool/network calls); the
@@ -50,7 +53,8 @@ def estimate_credits():
 COLUMNS = [
     "run_id", "user_email", "window_label", "date", "title",
     "process", "jtbd", "value_pillar", "primary_category", "categories",
-    "conversational", "n_run_tasks", "n_inputs", "n_outputs", "total_interactions",
+    "conversational", "n_run_tasks", "n_inputs", "n_outputs",
+    "total_interactions", "interactions_in_period",
     "skills", "professional_roles",
     "hours_saved_typical", "value_usd", "speed_x", "credits", "cost_usd",
     "cowork_fit_grade", "cowork_fit_method", "cowork_fit_rule_grade",
@@ -92,6 +96,7 @@ def rows_from(data):
             "n_inputs": _blank(g.get("n_inputs")),
             "n_outputs": _blank(g.get("n_outputs")),
             "total_interactions": _blank(g.get("total_interactions")),
+            "interactions_in_period": _blank(g.get("interactions_in_period")),
             "skills": _pipe(g.get("skills")),
             "professional_roles": _pipe(g.get("professional_roles")),
             "hours_saved_typical": _blank(g.get("hours_typical")),
@@ -122,8 +127,10 @@ def build(data, out_path):
     with open(out_path, "w", encoding="utf-8", newline="") as f:
         f.write("\ufeff" + buf.getvalue())
     n_int = sum(1 for r in rows if r["total_interactions"] != "")
-    print("wrote %s (%d session rows, %d columns; total_interactions on %d)"
-          % (out_path, len(rows), len(COLUMNS), n_int))
+    n_per = sum(1 for r in rows if r["interactions_in_period"] != "")
+    print("wrote %s (%d session rows, %d columns; total_interactions on %d, "
+          "interactions_in_period on %d)"
+          % (out_path, len(rows), len(COLUMNS), n_int, n_per))
 
 
 if __name__ == "__main__":

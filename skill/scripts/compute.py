@@ -189,12 +189,23 @@ def load_interactions_lookup():
             if not isinstance(v,dict): continue
             t=v.get("turns",{}) or {}
             tot=(t.get("user",0) or 0)+(t.get("assistant",0) or 0)
-            if tot:
+            times=[str(x) for x in (v.get("interaction_times") or []) if x]
+            if not tot and times: tot=len(times)   # fall back to timestamp count
+            if tot or times:
+                rec={"total":tot,"times":times}
                 for key in (v.get("id"), v.get("session_id"), k):
-                    if key: out[str(key)]=tot; out[str(key)[:8]]=tot
+                    if key: out[str(key)]=rec; out[str(key)[:8]]=rec
         return out
     except Exception:
         return {}
+
+def interactions_in_window(times, wfrom, wto):
+    """Count interaction turns whose date falls inside [wfrom, wto] (inclusive).
+    Dates are ISO (YYYY-MM-DD...), so a 10-char prefix compares lexicographically.
+    Returns None when there are no per-turn timestamps to split on."""
+    if not times: return None
+    lo=(wfrom or "")[:10]; hi=(wto or "9999-12-31")[:10]
+    return sum(1 for x in times if lo <= str(x)[:10] <= hi)
 
 
 # ---------------------------------------------------------------------------
@@ -417,6 +428,7 @@ def main(inp,out):
     d=json.load(open(inp)); meta=d["meta"]; sessions=d["sessions"]
     rate=meta.get("hourly_rate",72)
     win=meta.get("window",{"label":"Window","from":"","to":"","months":1})
+    wfrom=win.get("from",""); wto=win.get("to","")
     cost_lookup=load_cost_lookup()
     credits_lookup=load_credits_lookup()
     interactions_lookup=load_interactions_lookup()
@@ -506,6 +518,12 @@ def main(inp,out):
                 skillmin[name]+=share; skillsessions[name]+=1
 
         heat[(date,hour)] += len(cats)
+        # interactions: lifetime total vs. the count that actually happened in this
+        # report window (re-prompting an old session adds in-window turns without
+        # changing the session's date).
+        _ilk=interactions_lookup.get(str(sid)) or interactions_lookup.get(str(sid)[:8])
+        _itot=_ilk["total"] if _ilk else None
+        _iperiod=interactions_in_window(_ilk["times"], wfrom, wto) if _ilk else None
         goals.append({"session":sid,"date":date,"title":goal,"process":process,
                       "value_pillar":s.get("value_pillar","Transformation"),
                       "pillar_css":s.get("pillar_css","trans"),
@@ -519,7 +537,8 @@ def main(inp,out):
                       "professional_roles":prof_roles,
                       "n_inputs":len(inputs),"n_outputs":len(outputs),
                       "skills":[x for x in (s.get("skills") or []) if x],
-                      "total_interactions":interactions_lookup.get(str(sid)) or interactions_lookup.get(str(sid)[:8]),
+                      "total_interactions":_itot,
+                      "interactions_in_period":_iperiod,
                       "cowork_fit":cowork_fit(goal,outputs,inputs,cats,prof_roles,
                           extra_surfaces=set().union(*[deliv_surfaces.get(art_base(_name(o)).lower(),set()) for o in outputs]) if outputs else set(),
                           review=s.get("cowork_fit_review"),
