@@ -448,21 +448,32 @@ def build(data, out_path, anon=False):
     # ---- Server-side "Your projects" rows (never empty) + slim goals for the group dropdown ----
     CF_NAME={"H":"Needed Cowork (H)","M":"Moderate fit (M)","L":"Single-Copilot task (L)","?":"Insufficient evidence (?)"}
     pj_goals=[g for g in goals if g.get("minutes_typical",0)>0 or g.get("conversational")]
-    def _int_chip(g):
+    def _int_cells(g):
         tot=g.get("total_interactions"); per=g.get("interactions_in_period")
-        if tot is None: return ""
-        if per is not None and per!=tot:
-            return (' <span class="pj-int" title="User+assistant turns \u2014 %d in this period, '
-                    '%d over the session lifetime (an earlier session re-prompted in-window)">'
-                    '\u21a9 %d in-period / %d total</span>')%(per,tot,per,tot)
-        return ' <span class="pj-int" title="User+assistant turns in this session">\U0001f4ac %d</span>'%tot
+        na='<span class="pj-na">&mdash;</span>'
+        if tot is None:
+            return '<td class="num">%s</td><td class="num">%s</td>'%(na,na)
+        pcls='num pj-reprompt' if (per is not None and per<tot) else 'num'
+        ps=na if per is None else str(per)
+        return '<td class="%s">%s</td><td class="num">%d</td>'%(pcls,ps,tot)
+    def _int_sum(rows):
+        have=[r for r in rows if r.get("total_interactions") is not None]
+        na='<span class="pj-na">&mdash;</span>'
+        if not have:
+            return '<td class="num">%s</td><td class="num">%s</td>'%(na,na)
+        psum=sum((r.get("interactions_in_period") or 0) for r in have)
+        tsum=sum((r.get("total_interactions") or 0) for r in have)
+        pcls='num pj-reprompt' if psum<tsum else 'num'
+        return '<td class="%s">%d</td><td class="num">%d</td>'%(pcls,psum,tsum)
     def _pj_row(g):
         v=round(g.get("hours_typical",0)*rate)
         conv=' <span class="pj-conv">chat-only</span>' if g.get("conversational") else ""
+        tot=g.get("total_interactions"); per=g.get("interactions_in_period")
+        rep=' <span class="pj-rep" title="You re-prompted an earlier session this period: %s of %s lifetime turns happened in-window">\u21a9 re-prompted</span>'%(per,tot) if (tot is not None and per is not None and per<tot) else ""
         return ('<tr><td class="pj-p"><span class="pj-t">%s</span>%s%s</td>'
-                '<td class="pj-cf">%s</td>'
+                '<td class="pj-cf">%s</td>%s'
                 '<td class="num">%.1fh</td><td class="num">$%s</td></tr>'
-                )%(esc(g["title"]),conv,_int_chip(g),cf_badge(g),
+                )%(esc(g["title"]),conv,rep,cf_badge(g),_int_cells(g),
                    g.get("hours_typical",0),format(v,","))
     def pj_rows_grouped(group):
         gs=sorted(pj_goals,key=lambda x:-x.get("hours_typical",0))
@@ -486,9 +497,9 @@ def build(data, out_path, anon=False):
             label=CF_NAME.get(name,name) if group=="cf" else name
             pct=round(gh/grand*100)
             out+=('<tr class="pj-gh"><td colspan="2"><span class="pj-gh-t">%s</span>'
-                  '<span class="pj-gh-n">%d project%s</span></td>'
+                  '<span class="pj-gh-n">%d project%s</span></td>%s'
                   '<td class="num">%.1fh</td><td class="num">%d%%</td></tr>'
-                  )%(esc(label),len(rows),"" if len(rows)==1 else "s",gh,pct)
+                  )%(esc(label),len(rows),"" if len(rows)==1 else "s",_int_sum(rows),gh,pct)
             out+="".join(_pj_row(g) for g in rows)
         return out
     pj_initial_rows=pj_rows_grouped("process")
@@ -774,7 +785,10 @@ a{{color:var(--blue)}}
 .rp-h3{{font-size:16px;font-weight:700;margin:20px 0 4px}}
 .rp-h3 .sec{{color:var(--blue);margin-right:6px}}
 .pj-conv{{display:inline-block;background:#EFF6FC;color:var(--blue);border:1px solid #CFE4F7;border-radius:9px;padding:0 6px;font-size:9.5px;font-weight:700;margin-left:4px}}
-.pj-int{{display:inline-block;background:#F3F0FB;color:#6B2FA0;border:1px solid #E3D7F3;border-radius:9px;padding:0 6px;font-size:9.5px;font-weight:700;margin-left:4px;white-space:nowrap}}
+.pj-rep{{display:inline-block;background:#F3F0FB;color:#6B2FA0;border:1px solid #E3D7F3;border-radius:9px;padding:0 6px;font-size:9.5px;font-weight:700;margin-left:4px;white-space:nowrap}}
+.pj-th-sub{{display:block;font-weight:600;text-transform:none;letter-spacing:0;color:var(--blue);font-size:9px;margin-top:1px}}
+.pj-reprompt{{color:#6B2FA0;font-weight:700}}
+.pj-na{{color:var(--mut)}}
 .pj-gh td{{background:#F7FBFF;border-top:2px solid #E4EEF8;padding:9px 14px}}
 .pj-gh-t{{font-weight:800;font-size:12.5px;color:var(--ink)}}
 .pj-gh-n{{font-size:11px;color:var(--mut);margin-left:10px;font-weight:600}}
@@ -881,7 +895,7 @@ html{{scroll-behavior:smooth}}
     <span class="cf-kpi"><span class="cf cf-L">L</span><span class="cf-n">{cfs['L']}</span><span class="cf-lbl">a single Copilot could do it</span></span>
     <span class="cf-kpi"><span class="cf cf-U">?</span><span class="cf-n">{cfs.get('U',0)}</span><span class="cf-lbl">insufficient evidence (rare — no basis)</span></span>
   </div>
-  <p class="lead" style="margin:0 0 12px">All your projects in one table, each with a <b>Cowork-fit</b> dot — <b class="cf-ih">H</b> needed Cowork · <b class="cf-im">M</b> moderate fit · <b class="cf-il">L</b> a single Copilot could do it · <b class="cf-iu">?</b> insufficient evidence. <b>Hover any dot</b> for the specific reason. <b>Group by</b> process or category; the rows regroup in place, so you read the list once. Value follows your hourly rate.</p>
+  <p class="lead" style="margin:0 0 12px">All your projects in one table, each with a <b>Cowork-fit</b> dot — <b class="cf-ih">H</b> needed Cowork · <b class="cf-im">M</b> moderate fit · <b class="cf-il">L</b> a single Copilot could do it · <b class="cf-iu">?</b> insufficient evidence. <b>Hover any dot</b> for the specific reason. <b>Group by</b> process or category; the rows regroup in place, so you read the list once. Value follows your hourly rate. The <b>Turns</b> columns count user+assistant interactions — <b>in-period</b> vs the session's <b>all-time</b> total; a <b class="pj-reprompt">purple</b> in-period number means an older session you re-prompted this window.</p>
   <div class="pj-controls">
     <label class="pj-lbl" for="projGroupSel">Group by</label>
     <select id="projGroupSel" class="pj-select" onchange="projGroup(this.value)">
@@ -891,7 +905,7 @@ html{{scroll-behavior:smooth}}
   </div>
   <div class="card" style="padding:4px 0 0">
     <table class="pj-tbl">
-      <thead><tr><th>Project</th><th>Cowork-fit</th><th class="num">Hours</th><th class="num">Value</th></tr></thead>
+      <thead><tr><th>Project</th><th>Cowork-fit</th><th class="num" title="User+assistant turns during this report window">Turns<br><span class="pj-th-sub">in-period</span></th><th class="num" title="User+assistant turns over the whole session lifetime — re-prompted sessions accumulate">Turns<br><span class="pj-th-sub">all-time</span></th><th class="num">Hours</th><th class="num">Value</th></tr></thead>
       <tbody id="projRows">{pj_initial_rows}</tbody>
     </table>
   </div>
@@ -983,8 +997,9 @@ function pjEsc(x){{return String(x==null?'':x).replace(/[&<>"]/g,function(c){{re
 var CF_METHOD={{rule:'rule-based','AI-reviewed':'AI-reviewed (adjusted from rule)','AI-confirmed':'AI-reviewed (confirmed rule)','AI-review-rejected':'AI review rejected — kept rule grade (evidence unresolved)'}};
 function pjBadge(cf){{if(!cf||!cf.grade)return '';var m=CF_METHOD[cf.method||'rule']||'rule-based';var tip=((cf.label||'')+(cf.why?(': '+cf.why):''))+'  ['+m+']';var gc=cf.grade==='?'?'U':cf.grade;return '<span class="cf cf-'+gc+'" title="'+pjEsc(tip||cf.grade)+'">'+cf.grade+'</span>';}}
 function pjRateVal(){{return parseFloat(document.getElementById('rate').value)||0;}}
-function pjIntChip(g){{if(g.total_interactions==null)return '';var tot=g.total_interactions,per=g.interactions_in_period;if(per!=null&&per!==tot)return ' <span class="pj-int" title="User+assistant turns \u2014 '+per+' in this period, '+tot+' over the session lifetime (an earlier session re-prompted in-window)">\u21a9 '+per+' in-period / '+tot+' total</span>';return ' <span class="pj-int" title="User+assistant turns in this session">\U0001f4ac '+tot+'</span>';}}
-function pjRowsHtml(list,rate){{var h='';list.forEach(function(g){{var v=Math.round((g.hours_typical||0)*rate);var conv=g.conversational?' <span class="pj-conv">chat-only</span>':'';h+='<tr><td class="pj-p"><span class="pj-t">'+pjEsc(g.title)+'</span>'+conv+pjIntChip(g)+'</td>'+'<td class="pj-cf">'+pjBadge(g.cowork_fit)+'</td>'+'<td class="num">'+(g.hours_typical||0).toFixed(1)+'h</td>'+'<td class="num">$'+fmt(v)+'</td></tr>';}});return h;}}
+function pjIntCells(g){{if(g.total_interactions==null){{var na='<span class="pj-na">&mdash;</span>';return '<td class="num">'+na+'</td><td class="num">'+na+'</td>';}}var tot=g.total_interactions,per=g.interactions_in_period;var ps=(per==null)?'<span class="pj-na">&mdash;</span>':per;var cls=(per!=null&&per<tot)?'num pj-reprompt':'num';return '<td class="'+cls+'">'+ps+'</td><td class="num">'+tot+'</td>';}}
+function pjIntSum(rows){{var have=rows.filter(function(r){{return r.total_interactions!=null;}});if(!have.length){{var na='<span class="pj-na">&mdash;</span>';return '<td class="num">'+na+'</td><td class="num">'+na+'</td>';}}var ps=0,ts=0;have.forEach(function(r){{ps+=(r.interactions_in_period||0);ts+=(r.total_interactions||0);}});var cls=(ps<ts)?'num pj-reprompt':'num';return '<td class="'+cls+'">'+ps+'</td><td class="num">'+ts+'</td>';}}
+function pjRowsHtml(list,rate){{var h='';list.forEach(function(g){{var v=Math.round((g.hours_typical||0)*rate);var conv=g.conversational?' <span class="pj-conv">chat-only</span>':'';var tot=g.total_interactions,per=g.interactions_in_period;var rep=(tot!=null&&per!=null&&per<tot)?' <span class="pj-rep" title="You re-prompted an earlier session this period: '+per+' of '+tot+' lifetime turns happened in-window">\u21a9 re-prompted</span>':'';h+='<tr><td class="pj-p"><span class="pj-t">'+pjEsc(g.title)+'</span>'+conv+rep+'</td>'+'<td class="pj-cf">'+pjBadge(g.cowork_fit)+'</td>'+pjIntCells(g)+'<td class="num">'+(g.hours_typical||0).toFixed(1)+'h</td>'+'<td class="num">$'+fmt(v)+'</td></tr>';}});return h;}}
 function projRender(){{var tb=document.getElementById('projRows'); if(!tb)return; var rate=pjRateVal();
   var all=(DATA.goals||[]).filter(function(g){{return (g.hours_typical||0)>0||g.conversational;}});
   all.sort(function(a,b){{return (b.hours_typical||0)-(a.hours_typical||0);}});
@@ -1001,7 +1016,7 @@ function projRender(){{var tb=document.getElementById('projRows'); if(!tb)return
   var names=Object.keys(groups).sort(function(a,b){{var sa=0,sb=0;groups[a].forEach(function(g){{sa+=(g.hours_typical||0);}});groups[b].forEach(function(g){{sb+=(g.hours_typical||0);}});return sb-sa;}});
   var cfName={{H:'Needed Cowork (H)',M:'Cowork-platform op (M)',L:'Single-Copilot task (L)'}};
   var html='';
-  names.forEach(function(k){{var rows=groups[k].slice();var gh=0;rows.forEach(function(g){{gh+=(g.hours_typical||0);}});var label=(gb==='cf'&&cfName[k])?cfName[k]:k;var pct=Math.round(gh/grand*100);html+='<tr class="pj-gh"><td colspan="2"><span class="pj-gh-t">'+pjEsc(label)+'</span><span class="pj-gh-n">'+rows.length+' project'+(rows.length!==1?'s':'')+'</span></td><td class="num">'+gh.toFixed(1)+'h</td><td class="num">'+pct+'%</td></tr>';html+=pjRowsHtml(rows,rate);}});
+  names.forEach(function(k){{var rows=groups[k].slice();var gh=0;rows.forEach(function(g){{gh+=(g.hours_typical||0);}});var label=(gb==='cf'&&cfName[k])?cfName[k]:k;var pct=Math.round(gh/grand*100);html+='<tr class="pj-gh"><td colspan="2"><span class="pj-gh-t">'+pjEsc(label)+'</span><span class="pj-gh-n">'+rows.length+' project'+(rows.length!==1?'s':'')+'</span></td>'+pjIntSum(rows)+'<td class="num">'+gh.toFixed(1)+'h</td><td class="num">'+pct+'%</td></tr>';html+=pjRowsHtml(rows,rate);}});
   tb.innerHTML=html;}}
 function projGroup(val){{PJ_GROUP=val;projRender();}}
 document.getElementById('rate').addEventListener('input',projRender);

@@ -2,6 +2,25 @@
 
 ---
 
+## v43 — Interaction columns + re-prompt indicator in the projects table
+
+Surfaces per-session interaction counts as dedicated columns and flags sessions you
+re-prompted during the report window. Report-rendering only; no data-model change.
+
+### Projects table (`scripts/build_report.py`)
+- Replace the inline interaction chip with two dedicated numeric columns: **Turns ·
+  in-period** and **Turns · all-time**, rendered in both the server-side default view and
+  the client-side "Group by" re-render (group headers sum both columns).
+- Highlight in-period turns in purple when `in-period < all-time` (an older session
+  re-prompted this window); render `—` when telemetry is absent (honest n/a).
+- Add a **↩ re-prompted** pill next to the project title for re-prompted sessions, with a
+  tooltip showing the in-window vs lifetime turn split. Add a one-line legend under the
+  table heading and column tooltips.
+
+No classifier, Cowork-fit hierarchy, value-model, credits or telemetry-capture change.
+
+---
+
 ## v42 — Restore current-runtime chat-only capture and fix installed hook paths
 
 Repairs forward capture for the current Copilot runtime, shared with member skill v26.
