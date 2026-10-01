@@ -8,6 +8,12 @@ Usage: python build_report.py --data working/cowork_roi_data.json --out output/c
 """
 import json, argparse, html, collections, re
 
+def _json_for_script(value):
+    """Serialize data for an inline script without allowing HTML tag termination."""
+    return json.dumps(value, separators=(",", ":")).replace(
+        "<", "\\u003c"
+    ).replace(">", "\\u003e").replace("&", "\\u0026")
+
 def _date_only(s):
     """Render a generated-timestamp as a plain date — no clock time in the output."""
     s = (s or "").strip()
@@ -484,17 +490,17 @@ def build(data, out_path, anon=False):
             out+="".join(_pj_row(g) for g in rows)
         return out
     pj_initial_rows=pj_rows_grouped("process")
-    pj_goals_json=json.dumps([{
+    pj_goals_data=[{
         "title":g.get("title",""),"process":g.get("process",""),
         "categories":g.get("categories") or [],
         "hours_typical":g.get("hours_typical",0),
         "cowork_fit":{"grade":(g.get("cowork_fit") or {}).get("grade"),"label":(g.get("cowork_fit") or {}).get("label",""),"why":(g.get("cowork_fit") or {}).get("why",""),"method":(g.get("cowork_fit") or {}).get("method","rule")},"conversational":bool(g.get("conversational"))
-    } for g in pj_goals])
+    } for g in pj_goals]
 
-    payload_json=json.dumps({
+    payload_json=_json_for_script({
         "rate":rate,
         "hours":{"low":val["hours_low"],"typical":val["hours_typical"],"high":val["hours_high"]},
-        "goals":json.loads(pj_goals_json),
+        "goals":pj_goals_data,
     })
 
     # ---- real-cost ROI: research-anchored value vs real Copilot-credit cost (credits x $0.01 list) ----

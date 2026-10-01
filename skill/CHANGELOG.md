@@ -7,6 +7,12 @@
 Reworks the deterministic grader into an explicit, evidence-first hierarchy and fixes the
 over-use of the "Insufficient evidence" (`?`) grade.
 
+### Packaging and report safety refresh
+- Release archive contains `SKILL.md` plus 20 supporting files, staying within the skill
+  upload limit; the generated `skill-quality-report.json` remains repository-only.
+- User-derived report data embedded in JavaScript escapes HTML-significant characters,
+  preventing session or activity text from terminating the script element.
+
 ### Cowork-fit classifier (`scripts/compute.py`)
 - **Strict hierarchy (first match wins):** (1) **≥2 apps in play** — apps the actions
   touched (verified) unioned with apps inferred from outputs, goal and related sessions —
@@ -1247,4 +1253,3 @@ reflect artifact volume or the I/O split.
 
 The **assisted clock is modeled**, not measured. The multiplier is **directional**. The only way
 to tighten it is to capture real hands-on time per session.
-
