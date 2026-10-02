@@ -81,61 +81,63 @@ not count — this keeps the category honest.
 
 ---
 
-## Part 2 — Cowork-fit (High / Medium / Low) — a hybrid
+## Part 2 — Cowork-fit (H / M / L / ?) — a hybrid
 
 **The guiding question — the "single-surface test":**
 
 > *Could a single surface-specific / in-app Copilot (Excel, Word, PowerPoint,
 > Outlook, Teams, or Copilot chat) have done this end-to-end?*
 
-If **yes**, the work didn't need Cowork. Cowork's distinct value is the work no
-single in-app Copilot can do: building, automating, or **orchestrating across apps**.
-
-**Evidence-first.** The test is applied to *what Cowork actually did* — the **workflow
-evidence** (the apps its actions touched, the sources it reviewed, and its outputs),
-not merely the file it saved. An Excel-only *output* does **not** establish an
-Excel-only *workflow*. The grader unions the **verified** apps from the action trace
-(`apps_accessed`) with the apps **inferred** from outputs and related sessions; a
-cross-app workflow (e.g. Outlook + Excel) is **H**. A missing action trace does **not**
-by itself force abstention — the grader still infers the fit from the outputs, goal and
-related sessions. Only when there is **no basis at all** (a saved artifact of an
-unrecognized type, with no build / automation / multi-file / cross-app signal and no
-trace) is the assessment left as **"? — Insufficient evidence"** rather than guessed.
-This is deliberately **rare**.
+If **yes**, the rule grades the work Low. Cowork's strongest fit is work no single
+in-app Copilot spans: building, automating, multi-document handling, or orchestration
+across apps.
 
 | Grade | Colour | Meaning |
 |---|---|---|
-| **H — High** | Green | Cowork was genuinely needed: **≥2 apps in play**, or the output shows **code generation, automation/workflow, multi-document synthesis, or multiple different output formats**. Cross-app confirmed by the action trace is *verified*. |
-| **M — Moderate** | Yellow | Moderate fit — a single-surface task that still means **multi-format input** (reading two or more formats) or juggling a **large number of files**, or a lightweight Cowork-platform op. |
-| **L — Low** | Red | One in-app Copilot could have done it end-to-end — a single app/output, or a purely conversational task. |
-| **? — Insufficient evidence** | Grey | **Rare.** Only when there is no basis at all — an unrecognized output type with no code/automation/multi-format/cross-app signal and no action trace. A missing trace alone does not trigger this; the grader still infers from outputs/goal/related sessions. |
+| **H — High** | Green | Cross-app work, a build, automation/Specialized work, multi-document synthesis, or multiple output formats. |
+| **M — Moderate** | Yellow | Non-chat work with at least two input formats or at least three inputs/outputs, after no High rule matched. |
+| **L — Low** | Red | Chat-only work, or remaining work that maps to one recognized app. |
+| **? — Insufficient evidence** | Grey | A remaining output maps to no recognized app and has no stronger signal. |
 
-### Layer 1 — the deterministic rule (baseline)
+### What the baseline actually reads
 
-The rule walks a strict **hierarchy**, taking the first grade that matches:
+The deterministic baseline in `scripts/compute.py` uses:
 
-1. **≥2 apps in play → High.** Count the apps: those the actions *touched* (verified,
-   e.g. Outlook + Excel) unioned with those *inferred* from outputs, goal (a
-   "sharing"/distribution goal implies Outlook), and related sessions. Two or more → High
-   immediately.
-2. **Output signals → High.** Otherwise, if the work involved **code generation**, an
-   **automation / workflow** (inbox triage, channel scan, sweep, connector, recurring
-   run, Specialized workflow), **multi-document synthesis** (several docs across ≥2
-   formats, or >5 sources), or **multiple different output formats** → High.
-   *An automation-style process is never graded below High.*
-3. **Purely conversational → Low.** No output and no other app needed — Copilot chat
-   would have covered it.
-4. **Moderate multi-format / volume → Moderate.** A single-surface task that still reads
-   **two or more input formats**, juggles a **large number of files**, or is a
-   lightweight **Cowork-platform op** (install / share / schedule a skill or prompt).
-5. **Single app a lone Copilot could do → Low.** Exactly one surface/output.
-6. **Truly no signal → "?"** (rare) — see the grade table above.
+- Goal text and classified task categories.
+- Input/output extensions and file counts.
+- Verified app names from `apps_accessed`.
+- Inferred app names from outputs and selected goal/category keywords.
+- Surfaces from another session only when both sessions share the same output
+  basename.
 
-**Cross-session orchestration.** A deliverable built across two sessions — e.g.
-identify the emails in one session, build the Excel tracker in another — unions the
-surfaces from every contributing session, so it reads as **cross-surface (H)** in
-both. This is why "Build the value-story tracker" grades High even though that one
-session only wrote an `.xlsx`.
+The current rule does **not** branch on raw `actions`, `sources_reviewed`, or
+professional roles. An action trace affects the baseline only through the derived
+`apps_accessed` list.
+
+### Layer 1 — exact first-match order
+
+The first matching branch wins:
+
+1. **Two or more apps → H.** Union verified `apps_accessed`, apps inferred from
+   outputs and goal/category signals, and apps from sessions sharing an output
+   basename.
+2. **Build → H.** ZIP/code/HTML output, an explicit skill/package build, or an
+   explicit web-app/site/dashboard build.
+3. **Automation or Specialized workflow → H.** Executed connector/browser/sweep
+   work, an automation keyword (`triage`, `workflow`, `recurring`, `batch`,
+   `pipeline`, and similar), or the **Specialized workflows** category.
+4. **Multi-document synthesis → H.** At least **3 inputs across at least 2 file
+   formats**, or **more than 5 inputs**.
+5. **Multiple output formats → H.** At least **2 distinct output extensions**.
+6. **No outputs → L.** Chat-only work reaches this branch unless a High rule matched.
+7. **Moderate file handling → M.** At least **2 input formats**, or at least
+   **3 inputs** or **3 outputs**.
+8. **One recognized app → L.**
+9. **Anything remaining → ?**
+
+This order is significant: chat-only installation, sharing, or scheduling requests
+are currently **L**, not M, unless an earlier automation or Specialized-workflow rule
+makes them H.
 
 ### Layer 2 — the LLM review (judgment)
 
@@ -150,21 +152,14 @@ single-surface test and may **confirm or adjust** the rule grade:
   L]"*).
 - When no review is recorded, the **rule grade stands**, flagged **rule-based**.
 
-**Guardrail on downgrades.** The review may not quietly overturn action-grounded
-evidence. It **cannot** downgrade a **verified cross-app** workflow to **L**, nor an
-**automation** run below **M**, unless it explicitly **resolves the conflicting
-evidence** (records a `conflict` / `resolves_evidence` note). A downgrade that fails
-this test is rejected: the rule grade is kept and the attempt is flagged
-**AI-review-rejected**, with the proposed grade and reason preserved for transparency.
-
 Every H/M/L dot in the report is hoverable and shows its **project-specific reason
 and its method** (rule-based vs AI-reviewed), so you can always see *why* a grade
 was given and *how* it was decided.
 
-*Example.* A chat-only session that redesigns a chart's visual layout from a
-screenshot is mechanically **L** (one surface = PowerPoint). But nuanced,
-iterative visual-design isn't a clean single-Copilot task, so AI review may adjust
-it to **M** — shown as "M · AI-reviewed [rule said L]."
+**Review guard.** If H is backed by verified cross-app evidence, a build, or
+automation/Specialized work, review cannot lower it to L or ? without a `conflict`
+or `resolves_evidence` note. Moving H to M is allowed. High grades based only on
+multi-document or multi-output rules are not covered by this guard.
 
 ---
 
@@ -178,9 +173,9 @@ it to **M** — shown as "M · AI-reviewed [rule said L]."
   such per project. It is directional, not a definitive verdict on what another
   Copilot can or cannot do — you can disagree with any grade, and the tooltip shows
   the reasoning so you can.
-- **Heuristic inputs.** Grades are inferred from harvested artifacts, goals,
-  systems and roles — not from measured tool telemetry (which exists for only some
-  sessions).
+- **Heuristic inputs.** Grades are inferred from files, goals/categories, and
+  verified/inferred app names. Raw actions, source counts, and professional roles
+  do not currently affect the grade.
 - **Conservative by design.** Categories with no matching work show zero;
   "produced a file" is a weak Cowork-fit signal (in-app Copilots save files too);
   the methodology time-bands are not used to decide Cowork-fit. The goal is a

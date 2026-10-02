@@ -198,17 +198,16 @@ def load_interactions_lookup():
 
 
 # ---------------------------------------------------------------------------
-# Cowork-fit - the "single-surface test" (v28)
+# Cowork-fit - the "single-surface test"
 # Guiding question: could a single surface-specific / in-app Copilot have done
 # this end-to-end? If yes, it did not need Cowork.
 #   * build/package a skill, code, HTML app, or an EXECUTED automation/connector
 #       /browser run  -> no in-app surface exists  -> H (Cowork-only)
 #   * >= 2 in-app surfaces (cross-surface chain, e.g. Outlook + Excel)
 #                                                   -> H (no single Copilot spans apps)
-#   * lightweight Cowork-platform op (install/share/schedule a skill or prompt)
-#                                                   -> M
 #   * exactly 1 in-app surface                      -> L (name the surface)
-# Deterministic - no LLM. Signals come straight from the harvest.
+# The rule baseline is deterministic. An optional review can override it, subject
+# to the evidence guard at the end of cowork_fit().
 # ---------------------------------------------------------------------------
 CF_IN_APP = {"xlsx":"Excel","xlsm":"Excel","xls":"Excel","csv":"Excel","tsv":"Excel",
              "docx":"Word","doc":"Word","pdf":"Word","rtf":"Word",
@@ -267,12 +266,6 @@ def cowork_fit(goal, outputs, inputs, cats, roles, extra_surfaces=None, review=N
                 and (("run" in g) or ("sweep" in g) or ("execute" in g) or len(outputs) > 0))
     # -- >5 sources synthesized is also inherently agentic --
     big_synth = len(inputs) > 5
-    # -- lightweight Cowork-platform op (setup/config, no real artifact) --
-    platform_op = (any(v in g for v in ("install","set up","setup","schedule","register","enable"))
-                   or (" add " in g) or ("share " in g and "sharing" not in g) or ("attach" in g)) \
-                  and any(o in g for o in ("skill","prompt","workspace","automation","connector")) \
-                  and conversational
-
     # -- multi-file / multi-format signals. Heavy synthesis / several distinct OUTPUT
     #    formats are Cowork-worthy (H); lighter multi-format INPUT or sheer file volume is
     #    a MODERATE (M) fit. --
@@ -296,15 +289,12 @@ def cowork_fit(goal, outputs, inputs, cats, roles, extra_surfaces=None, review=N
     # -- WORKFLOW EVIDENCE. Assess what Cowork DID, not just the file it produced.
     #    `evidence` carries the action-grounded trace mined from the session transcript:
     #      apps    = M365 apps the ACTIONS actually touched (verified)
-    #      actions = the tool/action names, in order
-    #      sources = count of sources reviewed
     #    Verified apps are unioned with the surfaces INFERRED from outputs/goal and with
-    #    surfaces from related sessions (extra_surfaces). Cross-app evidence -> H. When NO
-    #    action history exists, a lone output cannot prove a single-app workflow. --
+    #    surfaces from sessions that share an output basename (extra_surfaces).
+    #    `actions` and `sources_reviewed` are preserved upstream for transparency but do
+    #    not currently change this rule baseline. --
     ev = evidence or {}
     verified_apps = set(a for a in (ev.get("apps") or []) if a)
-    ev_actions = ev.get("actions") or []
-    evidence_available = bool(verified_apps or ev_actions or ev.get("available"))
     inferred_surfaces = cf_surfaces(goal, outputs, cats) | set(extra_surfaces or [])
     surfaces = inferred_surfaces | verified_apps
     def _order(ss):
@@ -330,24 +320,24 @@ def cowork_fit(goal, outputs, inputs, cats, roles, extra_surfaces=None, review=N
     elif build:                                              # (2) code / app / skill build -> H
         grade, label = "H", "Cowork-only build"
         why = "Cowork generated or packaged code / an app / a skill here — no in-app Copilot can do that."
-    elif automation_h:                                       # (2) automation / workflow -> H
+    elif automation_h:                                       # (3) automation / workflow -> H
         grade, label = "H", "Automation / workflow"
         kind = automation_kind or ("connector run" if executed else "specialized workflow")
         why = ("Automation / workflow work (%s) — Cowork orchestrates across items or systems; "
                "no single in-app Copilot runs it." % kind)
-    elif multi_doc_synth:                                    # (2) multi-document synthesis -> H
+    elif multi_doc_synth:                                    # (4) multi-document synthesis -> H
         grade, label = "H", "Multi-document synthesis"
         why = (("Synthesizes %d source documents across %d formats — multi-doc synthesis beyond any "
                 "single-app Copilot." % (n_in, len(in_fmts))) if len(in_fmts) >= 2 else
                ("Synthesizes %d sources at once — beyond a single-app Copilot." % n_in))
-    elif multi_out_fmt:                                      # (2) multiple different output formats -> H
+    elif multi_out_fmt:                                      # (5) multiple different output formats -> H
         grade, label = "H", "Multi-format output"
         why = ("Produces %d different output formats (%s) — no single in-app Copilot emits across "
                "formats." % (len(out_fmts), ", ".join(sorted(f for f in out_fmts if f))))
-    elif conversational:                                     # (3) purely conversational -> L
+    elif conversational:                                     # (6) purely conversational -> L
         grade, label = "L", "Copilot chat could do it"
         why = "A purely conversational task with no build and no other app — Copilot chat would have covered it."
-    elif moderate_complexity:                                # (5) moderate multi-format / volume -> M
+    elif moderate_complexity:                                # (7) moderate multi-format / volume -> M
         grade, label = "M", "Moderate fit"
         if multi_fmt_input:
             why = ("Juggles %d different input formats into the output — multi-format handling that's "
@@ -355,18 +345,14 @@ def cowork_fit(goal, outputs, inputs, cats, roles, extra_surfaces=None, review=N
         else:
             why = ("Juggles %d files at once — the volume makes it a moderate fit, more than a "
                    "single-app Copilot task." % max(n_in, n_out))
-    elif platform_op:                                        # (5) lightweight Cowork-platform op -> M
-        grade, label = "M", "Moderate fit"
-        why = ("Managing Cowork itself (installing, sharing or scheduling a skill/prompt) — a light "
-               "Cowork-platform task, not an in-app Copilot one.")
-    elif len(surfaces) == 1:                                 # (4) single app a lone Copilot could do -> L
+    elif len(surfaces) == 1:                                 # (8) single app a lone Copilot could do -> L
         only = next(iter(surfaces))
         grade, label = "L", "%s Copilot could do it" % only
         if verified_apps:
             why = "The action trace shows this stayed in one app (%s) — %s Copilot alone would have covered it." % (only, only)
         else:
             why = "This reads as single-app %s work — %s Copilot alone would likely have covered it." % (only, only)
-    else:                                                    # (6) truly no signal -> ?
+    else:                                                    # (9) truly no signal -> ?
         grade, label = "?", "Insufficient evidence"
         seen = out_ext[0] if (out_ext and out_ext[0]) else "file"
         why = ("The saved %s output maps to no clear app and there's no code / automation / "
@@ -387,8 +373,8 @@ def cowork_fit(goal, outputs, inputs, cats, roles, extra_surfaces=None, review=N
     # `review = {"grade": "H|M|L|?", "why", "label", "resolves_evidence"|"conflict"}`.
     # It OVERRIDES the rule grade (kept as rule_grade), flagged method="AI-reviewed".
     # GUARD: the review may NOT silently downgrade hard evidence — a verified cross-app
-    # H cannot drop to L, and an automation-floored M cannot drop below M — unless it
-    # EXPLICITLY resolves the conflict (`resolves_evidence` truthy, or a `conflict` note).
+    # H cannot drop to L/? when it is backed by verified cross-app, build, or automation
+    # evidence unless the review EXPLICITLY resolves the conflict.
     if review and review.get("grade") in ("H", "M", "L", "?"):
         new_grade = review["grade"]
         resolved = bool(review.get("resolves_evidence") or review.get("conflict"))

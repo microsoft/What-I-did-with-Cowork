@@ -12,6 +12,8 @@ over-use of the "Insufficient evidence" (`?`) grade.
   upload limit; the generated `skill-quality-report.json` remains repository-only.
 - User-derived report data embedded in JavaScript escapes HTML-significant characters,
   preventing session or activity text from terminating the script element.
+- Cowork-fit methodology text now mirrors the exact `compute.py` first-match order and
+  identifies which harvested fields do and do not affect the grade.
 
 ### Cowork-fit classifier (`scripts/compute.py`)
 - **Strict hierarchy (first match wins):** (1) **≥2 apps in play** — apps the actions
