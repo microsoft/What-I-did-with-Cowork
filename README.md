@@ -6,6 +6,16 @@
 
 ---
 
+## Watch the overview
+
+A 2-minute tour of the report — Time Saved, professional-services-equivalent value, and the Business Process ▸ Project mapping.
+
+https://github.com/microsoft/What-I-did-with-Cowork/raw/main/media/Cowork_Impact_Report_Overview.mp4
+
+> If the player above doesn't load, [download the overview video](media/Cowork_Impact_Report_Overview.mp4).
+
+---
+
 ## What is this?
 
 **"What Cowork Did for Me"** is a skill for [Copilot Cowork](https://copilot.cloud.microsoft/cowork) that generates a polished, Microsoft-branded **single-file HTML report** from your own Cowork session history stored in OneDrive. It answers the question: *"How much time and value has Cowork given me?"*
