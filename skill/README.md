@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> **Disclaimer:** This is not an official Microsoft Cowork skill. It is an approach to understanding your work and how Cowork enriches it. You can customize the skill to meet your requirements.
+
 # Cowork ROI — Personal Impact Report (skill)
 
 Generates a Microsoft-branded **"What Cowork Did for Me"** single-file HTML report from your own

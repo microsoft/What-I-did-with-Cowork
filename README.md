@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> **Disclaimer:** This is not an official Microsoft Cowork skill. It is an approach to understanding your work and how Cowork enriches it. You can customize the skill to meet your requirements.
+
 # What Cowork Did for Me
 
 > A personal impact report skill for **Microsoft Copilot Cowork** — it leads with research-anchored **Time Saved** and its **professional-services-equivalent value**, then maps your work to your own Business Processes and Projects and grades each project's **Cowork-fit**.
