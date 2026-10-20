@@ -38,7 +38,7 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 
 **Let Cowork install it for you (easiest):**
 
-1. **Download** the latest version: [`cowork-roi-report-skill-v41.zip`](cowork-roi-report-skill-v41.zip) *(no need to unzip — attach it as-is)*
+1. **Download** the latest version: [`cowork-roi-report-skill-v48.zip`](cowork-roi-report-skill-v48.zip) *(no need to unzip — attach it as-is)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session
 3. **Click the ➕ (plus) symbol** to attach the zip file, then send:
 
@@ -49,8 +49,8 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 
 | Version | File | Status |
 |---|---|---|
-| **v41** | [`cowork-roi-report-skill-v41.zip`](cowork-roi-report-skill-v41.zip) | ✅ **Latest version** — recommended |
-| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v40) |
+| **v48** | [`cowork-roi-report-skill-v48.zip`](cowork-roi-report-skill-v48.zip) | ✅ **Latest version** — recommended |
+| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v41) |
 
 ---
 
@@ -147,7 +147,8 @@ Sources: Stanford-WB, Microsoft Research, NBER, Forrester — all clickable in t
 cowork-roi-report/
 ├── SKILL.md                     # skill definition + workflow (loaded by Cowork)
 ├── README.md                    # technical documentation
-├── CHANGELOG.md                 # consolidated version history (latest: v41 Cowork-fit hierarchy)
+├── CHANGELOG.md                 # consolidated version history through v41
+├── CHANGELOG-v*.md              # per-release notes (latest: v48 research vs content)
 ├── scripts/
 │   ├── reconcile_taxonomy.py    # align-first/create-if-novel; owner-scoped registry; runs before classify.py
 │   ├── classify.py              # deterministic ext→category classifier
@@ -155,6 +156,7 @@ cowork-roi-report/
 │   ├── build_report.py          # renders the self-contained HTML report
 │   ├── to_csv.py                # exports one analysis-ready row per session
 │   ├── mine_session.py          # mines the live session transcript (telemetry hook)
+│   ├── persistence.py           # read / stage / explicitly publish the durable registry
 │   ├── statusline_cost.py       # optional status-line cost helper
 │   ├── apqc_taxonomy.json       # generic APQC fallback business-process taxonomy
 │   ├── roles_taxonomy.json      # role keyword fallback for "roles assembled"
@@ -166,9 +168,11 @@ cowork-roi-report/
 │   ├── methodology.md           # detailed bands table + two-clock formulas
 │   ├── classification-methodology.md  # how categories + Cowork-fit (H/M/L) are decided
 │   ├── classification-reference.md    # extension/category heuristics + raw-harvest schema
+│   ├── persistence.md           # how the registry is read, staged and published
 │   └── value-pillars.md         # the four-pillar crosswalk (reference only)
 └── examples/
-    └── sample_sessions.json     # synthetic input (safe to share)
+    ├── sample_sessions.json     # synthetic input (safe to share)
+    └── demo_sessions.json       # synthetic demo input
 ```
 
 The **durable taxonomy memory** is a per-user, owner-scoped registry (`~/.claude/cowork-process-registry.<user>.json`, Processes + known Projects) that is read first, aligned to, and persisted every run. It lives on the user's own mount (syncing to their OneDrive `Documents/Cowork/`) and is never bundled with the skill; a first run with no registry starts clean and mints processes from the user's own sessions.
@@ -197,6 +201,13 @@ python scripts/to_csv.py       --data working/cowork_roi_data.json --out output/
 
 ## What's new
 
+- **v48** — Research vs content: a session counts as **Analysis & Research** when the goal states research intent *and* it gathered from **≥ 3 sources**, even if the findings end in a deck or doc. Content verbs (draft, design, polish, build a deck) keep work in Document & content creation. The methodology now spells out the full ordered rule set, file-type map and worked examples.
+- **v47** — When several categories fit, the **format of the final deliverable** breaks the tie; outside-M365 systems become a Specialized *candidate* rather than an override.
+- **v46** — Sessions that touch systems outside Microsoft 365 (CRM, ServiceNow, Jira, SAP, GitHub, etc. via connectors or MCP) are classified as **Specialized workflows**.
+- **v45** — Each session is attributed to its **final output**: work ending in an email → **Email workflows**; Teams posts or mainly Teams synthesis → **Communication workflows**.
+- **v44** — **One category per session** (no double-counting); skill build/attach/install/review is classified as **Write or debug code**.
+- **v43** — The taxonomy registry is now read, staged and **explicitly published** (`persistence.py`).
+- **v42** — Telemetry capture works with the current Copilot session-state format (Outlook/Teams/calendar tools credited to the right categories).
 - **v41** — Cowork-fit is now a strict **H/M/L/? hierarchy**: ≥2 apps in play → **High**; code generation, automation/workflow, multi-doc synthesis, or multiple output formats → **High** (automation is never below High); multi-format input / many files → **Moderate**; single app/output or conversational → **Low**. The **`?` (Insufficient evidence)** grade is now **rare** — a missing action trace no longer collapses to `?`, since the grade is still inferred from outputs/goal/related sessions.
 - **v40** — Cowork-fit is now **evidence-based**: it grades what Cowork *did* (the apps its actions touched, sources reviewed, and outputs), not just the one saved file. Cross-app workflows (e.g. **Outlook + Excel → High**) are graded on evidence; when no action history exists the work is marked **Insufficient evidence** instead of defaulting to Low; and the AI review can't downgrade verified cross-app work to Low, or automation below Moderate, without resolving the conflict. CSV gains evidence/apps columns.
 - **v39** — Cowork-fit refinements: automation-style work (inbox triage, channel scan, workflow) can never grade **Low**, and **Moderate fit** now also covers multi-file / multi-format synthesis. Report output shows **dates only** (no timestamps) and drops meta caveat sections.
