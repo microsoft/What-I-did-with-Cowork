@@ -28,3 +28,13 @@ Source URLs are embedded as clickable links inside the generated report's Glossa
 - **Conservative / Optimistic** re-run the expert clock with the floor/ceiling analysis bands and lighter/heavier read & authoring weights.
 
 The report also renders an **Analyzed → Produced** breakdown (inputs analyzed vs. outputs produced, by type) from the same artifact counts.
+## Category attribution (summary)
+
+Each session gets **exactly one category**, and its time saved is credited to that
+category alone. Rules, in order: (1) ends in an email or is inbox triage → Email;
+(2) posts to Teams or mainly synthesizes Teams channels → Communication; (3) skill
+work → Write or debug code; (4) research intent **plus** evidence of gathering from
+≥3 sources → Analysis & Research, even when it ends in a deck or doc; (5) touches a
+system outside Microsoft 365 → Specialized (candidate); (6) any remaining tie → the
+final output's file type decides. Full rules, evidence test and worked examples:
+[classification-methodology.md](classification-methodology.md).

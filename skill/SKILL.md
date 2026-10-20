@@ -1,11 +1,9 @@
 ---
 name: cowork-roi-report
 description: |
-  Generates a Microsoft-branded "What Cowork Did for Me" self-contained HTML impact report from the
-  signed-in user's own Copilot Cowork session history in OneDrive. Quantifies leverage as a speed
-  multiplier and a professional-services-equivalent value using research-anchored task-category bands
-  and an artifact-scaled two-clock model, with a live hourly-rate control, KPIs, a work-by-business-process
-  breakdown, a projects-by-category view, and an activity heatmap.
+  Generates a personal "What Cowork Did for Me" HTML impact report from the signed-in user's
+  own Copilot Cowork history in OneDrive, with estimated time savings, professional-services
+  value, and breakdowns by process, project and category.
 
   Use when the user asks to "generate my impact summary report", "generate my impact report",
   "my impact summary", "my Cowork ROI", "what Cowork did for me", "Cowork impact report",
@@ -14,9 +12,10 @@ description: |
 
   Do NOT use for: GitHub Copilot / IDE reports, team-wide announcements, single-meeting summaries,
   or daily briefings.
-cowork:
+metadata:
   category: analysis
   icon: BarChart4
+  version: "41"
 ---
 
 # Cowork ROI — Impact Report Generator
@@ -100,17 +99,17 @@ writes a `runs:{category:count}` field. Without telemetry, estimate runs conserv
 `inputs`, `outputs` and `exec_min`) to `working/cowork_raw.json`, then run:
 `python scripts/classify.py --in working/cowork_raw.json --out working/cowork_sessions.json --overrides working/process_overrides.json`.
 It maps each session's real artifact **extensions** to categories (e.g. `.xlsx/.csv`→analysis, `.docx/.pptx/.pdf`→document,
-`.html/.py/.ps1`→code, `.zip`→special), caps ~2 run tasks/session, and tags output-less sessions `general`.
+`.html/.py/.ps1/.zip`→code), assigns exactly **one category per session** using the ordered rules in [references/classification-methodology.md](references/classification-methodology.md) (email → Teams → skill work → evidenced research → outside-M365 → final-output format), and tags output-less sessions `general`.
 This is the fix for the failure mode where every session was stamped with the same category pair and every
 goal collapsed to the same hours — **never assign the same default categories to every session.** You may bump
 a clearly analytical deliverable (a synthesis report saved as `.docx/.pptx`) to `analysis`, but the extension
 map is the default. **Be conservative — credibility matters more than a big number.**
 
-**Category choice follows the Cowork usage taxonomy (Description/Examples).** `classify.py` is description-driven: **Analysis & Research** only from analytical goal text (synthesize, compare, brief from multiple sources), NOT a file type; a built **spreadsheet is Document & content creation**, not analysis. **Email workflows** (Outlook) and **Communication workflows** (Teams) are the same ideas on different surfaces. The 8 labels, 2-per-session cap, PRIORITY tie-break and document output-gate are unchanged; deterministic. Full rules: **[references/classification-methodology.md](references/classification-methodology.md)**.
+**Category choice follows the Cowork usage taxonomy (Description/Examples).** `classify.py` is description-driven: **Analysis & Research** only from analytical goal text (synthesize, compare, brief from multiple sources), NOT a file type; a built **spreadsheet is Document & content creation**, not analysis. **Email workflows** (Outlook) and **Communication workflows** (Teams) are the same ideas on different surfaces. The 8 labels, one-category-per-session rule, PRIORITY tie-break and document output-gate are unchanged; deterministic. Full rules: **[references/classification-methodology.md](references/classification-methodology.md)**.
 
 Extension→category heuristics, counting discipline, and the exact `working/cowork_raw.json`
 schema `classify.py` consumes are in **[references/classification-reference.md](references/classification-reference.md)**.
-Key rules: cap **~2 run tasks/session**, fold supporting files into the primary task, and report
+Key rules: **one category per session** (time saved attributed to it alone), fold supporting files into the primary task, and report
 categories with no artifacts as **zero** (a conservative floor).
 
 ### 4a. Tag the skills behind each deliverable (populates "Skills augmented")
@@ -159,7 +158,7 @@ Nothing user-specific is committed to the skill folder; overrides are scratch un
 The report's **Work by business process** section pivots on Process: each process is an accordion with
 its subtotal (**sessions · hours · value · % of time**), the distinct **JTBD(s)** it served, and the
 **projects** beneath it. A secondary **By pillar** toggle groups the same projects by value pillar.
-**(Report layout:** a single **"Your projects" table** is the one place projects are listed, sitting under the KPI cards. A single **Group-by dropdown** (Process/Category) regroups rows in place, read once; rows render server-side (never blank). Columns: Project · Cowork-fit · Hours · Value. Each row carries a **Cowork-fit dot** using the exact first-match rule in `compute.py`: **H green** = at least two inferred/verified apps; a code/app/skill build; automation or a Specialized workflow; at least 3 inputs across at least 2 formats (or more than 5 inputs); or at least 2 output formats. **L red** is assigned next to every chat-only session. **M yellow** then covers non-chat work with at least 2 input formats or at least 3 input/output files. Remaining single-app work is **L**; remaining unrecognized output is **? grey**. The baseline uses file evidence, goal/category signals, `apps_accessed`, and surfaces from sessions sharing an output basename. Raw `actions`, `sources_reviewed`, and professional roles do not currently change the grade. An optional **LLM review** may confirm/adjust the baseline; it cannot downgrade verified cross-app, build, or automation evidence from H to L/? without explicitly resolving the conflict. Each dot shows its reason and method on hover. The **Roles × projects heatmap** replaces the flat role list under "Roles Cowork assembled for me"; only Deliverables stays behind a toggle.**)**
+**(Report layout:** a single **"Your projects" table** is the one place projects are listed, sitting under the KPI cards. A single **Group-by dropdown** (Process/Category) regroups rows in place, read once; rows render server-side (never blank). Columns: Project · Cowork-fit · Hours · Value. Each row carries a **Cowork-fit dot** graded by a strict hierarchy: **H green** = **≥2 apps in play** (verified from actions or inferred from outputs/goal/related sessions — Outlook + Excel → H), or the output shows **code generation, automation/workflow, multi-document synthesis, or multiple different output formats** (**automation/workflow is never below H**); **M yellow (moderate fit)** = a single-surface task that still reads **multiple input formats** or juggles **many files**, or a light Cowork-platform op; **L red** = one app/output a single Copilot could cover, or a purely conversational task; **? grey (Insufficient evidence, rare)** = no basis at all (unrecognized output type, no code/automation/multi-format/cross-app signal, no trace) — a missing trace alone does **not** trigger it, the grade is still inferred from outputs/goal/related sessions. **Evidence-first:** grade on *what Cowork did* (apps its actions touched + apps inferred from outputs/related sessions/goal), not just the saved file — Outlook + Excel → H; a "sharing"/distribution goal implies Outlook. When mining, **populate `request`/`actions`/`apps_accessed`/`sources_reviewed` only if the action history is available, and leave them ABSENT (not `[]`) when it is not.** **Two-layer hybrid:** a deterministic rule sets the baseline, then an **LLM review** may confirm/adjust each grade (a keyword can’t truly judge capability); it **may not** downgrade verified cross-app work to L or automation below M without explicitly resolving the conflicting evidence (else the attempt is flagged AI-review-rejected). Each dot is flagged rule-based/AI-reviewed; hover shows reason + method. The **Roles × projects heatmap** replaces the flat role list under "Roles Cowork assembled for me"; only Deliverables stays behind a toggle.**)**
 
 > **Memory-first + packaging:** each run locates the user's own owner-scoped registry and aligns to it (only
 > novel work adds a name). NEVER bundle the registry, any `cowork-process-registry*.json`, or a populated
@@ -197,7 +196,7 @@ Bands table + sources + two-clock formulas: **[references/methodology.md](refere
 
 ## Guardrails
 - **No fabricated work.** Every run task traces to a real session/artifact; zero-artifact categories show zero.
-- **Conservative counting.** Cap ~2 tasks/session; fold supporting files into the primary. Prefer credible over impressive.
+- **Conservative counting.** One category per session; fold supporting files into the primary. Prefer credible over impressive.
 - **No hand arithmetic.** All numbers from `compute.py`.
 - **Privacy.** Show artifact filenames and short goal phrases only; never file contents.
 - **Per-user memory — never leak it.** The taxonomy registry is owner-scoped; `reconcile_taxonomy.py`
