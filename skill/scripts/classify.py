@@ -221,7 +221,7 @@ EXT2CAT = {
     "js": "code", "ts": "code", "sql": "code", "ipynb": "code",
     "sh": "code", "yaml": "code", "yml": "code",
     # Specialized workflows
-    "zip": "special", "skill": "special",
+    "zip": "code", "skill": "code",
 }
 
 PRIORITY = ["code", "analysis", "special", "document", "comms", "meeting", "email", "general"]
@@ -339,6 +339,8 @@ def norm(items) -> list:
         item = {"name": name, "ext": ext}
         if isinstance(a, dict) and a.get("skills"):
             item["skills"] = [x for x in a["skills"] if x]
+        if isinstance(a, dict) and a.get("created"):
+            item["created"] = a["created"]
         out.append(item)
     return out
 
@@ -389,6 +391,121 @@ def assign_roles(text: str, taxonomy: list, default: str) -> list:
     return hits[:2] or [default]
 
 
+# v45 — final-output routing for Email (Outlook) and Communication (Teams) workflows.
+EMAIL_OUTPUT_ACTIONS = ("sendemail", "senddraftmessage", "createdraftmessage", "createreplydraft",
+                        "createreplyalldraft", "createforwarddraft", "replytomessage",
+                        "replyalltomessage", "forwardmessage")
+INBOX_TRIAGE_ACTIONS = ("movemessage", "flagemail", "updatemessage", "createmailrule", "deletemessage")
+EMAIL_GOAL_SIGNALS = EMAIL_SIGNALS + (" mail ", "e-mail", "draft a note to", "send a note", "inbox zero")
+TEAMS_POST_ACTIONS = ("postchannelmessage", "postmessage", "replytochannelmessage", "updatechatmessage")
+TEAMS_READ_ACTIONS = ("listchannelmessages", "listchatmessages", "getchannel", "getchatmessage", "listchats")
+TEAMS_GOAL_SIGNALS = COMMS_SIGNALS + ("teams post", "channel post", "post to channel", "post my",
+                                      "across channels", "across teams", "channels")
+
+
+def final_output_category(s: dict, g: str):
+    acts = [str(a).lower().split("__")[-1] for a in (s.get("actions") or [])]
+    has = lambda keys: any(any(k == a or a.endswith(k) for k in keys) for a in acts)
+    # 1. Email is the final output (or inbox triage) -> email, regardless of sources.
+    if has(EMAIL_OUTPUT_ACTIONS) or has(INBOX_TRIAGE_ACTIONS) or any(k in g for k in EMAIL_GOAL_SIGNALS):
+        return "email"
+    # 2. Posts to Teams, or predominantly Teams-channel synthesis -> comms.
+    teams_reads = sum(1 for a in acts if a in TEAMS_READ_ACTIONS)
+    data_acts = [a for a in acts if a.startswith(("list", "get", "search", "read", "query"))]
+    predominantly_teams = data_acts and teams_reads >= 2 and teams_reads * 2 >= len(data_acts)
+    if has(TEAMS_POST_ACTIONS) or any(k in g for k in TEAMS_GOAL_SIGNALS) or predominantly_teams:
+        return "comms"
+    return None
+
+
+# v46 — systems OUTSIDE Microsoft 365 (CRM / line-of-business apps reached via a
+# connector or a third-party MCP server) -> Specialized workflows.
+M365_INTERNAL_SERVERS = {"outlook", "outlook_calendar", "m365_teams", "m365_search", "m365_copilot",
+                         "sharepoint_onedrive", "me_profile", "graph", "pbi_fabricaihub",
+                         "core", "host", "memory", "appbuilder", "simple_browser", "powerplatform"}
+CONNECTOR_ACTIONS = ("invokeconnectoroperation", "hydrateconnector", "createconnection")
+EXTERNAL_GOAL_SIGNALS = (" crm", "salesforce", "dynamics 365", "d365", "servicenow", "service now",
+                         "jira", "workday", "sap ", "hubspot", "zendesk", "github", "snowflake",
+                         "databricks", "connector", " mcp", "third-party", "external system")
+
+
+def touches_external_system(s: dict, g: str) -> bool:
+    for a in (s.get("actions") or []):
+        a = str(a).lower()
+        if a.split("__")[-1] in CONNECTOR_ACTIONS:
+            return True
+        if a.startswith("mcp__"):
+            server = a.split("__")[1]
+            if server not in M365_INTERNAL_SERVERS:
+                return True
+    if any(str(x).lower() not in ("outlook", "teams", "excel", "word", "powerpoint", "onenote",
+                                  "sharepoint", "onedrive", "loop", "planner", "calendar",
+                                  "power bi", "copilot")
+           for x in (s.get("apps_accessed") or [])):
+        return True
+    return any(k in g for k in EXTERNAL_GOAL_SIGNALS)
+
+
+# v47 — FINAL OUTPUT FORMAT is the tie-breaker. When more than one category fits a
+# session, the format of its final deliverable decides; PRIORITY is only the
+# fallback when there is no deliverable (or its format maps to no candidate).
+SUPPORTING_EXT = {"md", "txt", "json", "log", "lock", "png", "jpg", "jpeg", "gif", "svg"}
+
+
+def final_output(outputs: list):
+    """The session's final deliverable: latest-created primary file (supporting files
+    such as notes, logs, screenshots are skipped unless they are all there is)."""
+    if not outputs:
+        return None
+    primary = [a for a in outputs if a["ext"] not in SUPPORTING_EXT] or outputs
+    if any(a.get("created") for a in primary):
+        return max(primary, key=lambda a: a.get("created") or "")
+    return primary[-1]
+
+
+# v48 — RESEARCH vs CONTENT: "who did the thinking?"
+# Research almost always ends in a deck or doc, so file type cannot separate it.
+# A session is Analysis & Research when (a) the goal states research INTENT and
+# (b) — when an action history exists — it shows real GATHERING. Otherwise the
+# deck/doc is content creation and the final-output format decides as usual.
+RESEARCH_INTENT = ("research", "compare", "comparison", "investigat", "evaluat", "synthes",
+                   "analyz", "analyse", "analysis", "benchmark", "assess", "deep dive",
+                   "explore options", "pros and cons", "landscape", "competitive",
+                   "options for", "trade-off", "tradeoff", "which is better")
+CONTENT_INTENT = ("draft", "design", "format", "refresh", "polish", "redesign", "visual",
+                  "build a deck", "build deck", "slide", "template", "rewrite", "edit ",
+                  "proofread", "convert", "update deck")
+GATHER_ACTIONS = ("search", "web_fetch", "bing", "readfilecontent", "getmessage", "listmessages",
+                  "listchannelmessages", "listchatmessages", "getmeetingtranscript", "querygraph",
+                  "searchdrive", "executequery", "browser_actions")
+RESEARCH_MIN_SOURCES = 3
+RESEARCH_CONTAINER_CATS = ("document", "analysis", None)  # deck/doc/sheet, or no saved file
+
+
+def research_evidence(s: dict, inputs: list):
+    """True / False when an action history exists; None when it does not (goal decides)."""
+    if s.get("sources_reviewed") is not None:
+        return int(s["sources_reviewed"]) >= RESEARCH_MIN_SOURCES
+    acts = s.get("actions")
+    if acts is None:
+        return None
+    gathers = sum(1 for a in acts if any(k in str(a).lower() for k in GATHER_ACTIONS))
+    data_inputs = [a for a in inputs if a["ext"] not in SUPPORTING_EXT]
+    return gathers >= RESEARCH_MIN_SOURCES or len(data_inputs) >= RESEARCH_MIN_SOURCES
+
+
+def is_research(s: dict, g: str, inputs: list, outputs: list) -> bool:
+    if not any(k in g for k in RESEARCH_INTENT):
+        return False
+    fo = final_output(outputs)
+    if (EXT2CAT.get(fo["ext"]) if fo else None) not in RESEARCH_CONTAINER_CATS:
+        return False          # research that ends in an app/script: the build decides
+    if any(k in g for k in CONTENT_INTENT) and not any(k in g for k in ("research", "investigat", "compare", "evaluat", "synthes")):
+        return False          # mainly a content/design task that mentions analysis
+    ev = research_evidence(s, inputs)
+    return ev is not False    # evidence present, or no action history (goal decides)
+
+
 def classify_session(s: dict) -> tuple:
     outputs = norm(s.get("outputs") if s.get("outputs") is not None else s.get("artifacts", []))
     inputs = norm(s.get("inputs", []))
@@ -410,10 +527,49 @@ def classify_session(s: dict) -> tuple:
     # session with no saved deliverable — from landing in the Document bucket.
     if "document" in cats and not any(a["ext"] in CONTENT_EXT for a in outputs):
         cats.remove("document")
+    g = " " + (s.get("goal", "") or "").lower() + " "
+    # v45 GUIDING RULE — attribute the session to its FINAL OUTPUT.
+    #  1. Ends in an email (send / draft / reply / forward) or is inbox triage
+    #     -> Email workflows, even if it synthesized Teams, channels or meetings.
+    #  2. Else posts to Teams, or predominantly synthesizes across Teams
+    #     channels/chats -> Communication workflows.
+    #  3. Else skill build -> code.
+    #  3b. Else research intent + gathering evidence -> analysis (v48).
+    #  4. Else candidates (outside-M365 system -> special, goal text, file types);
+    #     a TIE is broken by the FINAL OUTPUT FORMAT, then PRIORITY.
+    final = final_output_category(s, g)
+    if final:
+        return ([final], "" if outputs else "conversational (no saved artifact)")
+    # v46: touches a system outside M365 (CRM etc. via connector / MCP) -> special
+    # is a CANDIDATE (v47): if the session also produced a deliverable of another
+    # type, the final output format breaks the tie.
+    if touches_external_system(s, g) and "special" not in cats:
+        cats.append("special")
+    # v44: skill creation / attachment / packaging / install / quality review is
+    # BUILD work -> "Write or debug code" (it was splitting into analysis + special).
+    is_skill_build = (" skill" in g or " plugin" in g
+                      or any(a["ext"] in ("zip", "skill") for a in inputs + outputs))
+    if is_skill_build:
+        return (["code"], "" if outputs else "conversational (no saved artifact)")
+    # v48: research intent + gathering evidence -> Analysis & Research, even when the
+    # findings land in a deck or doc (the deck is the container, not the work).
+    if is_research(s, g, inputs, outputs):
+        return (["analysis"], "" if outputs else "conversational (no saved artifact)")
+    # Research intent WITHOUT the evidence (or a content task) is not analysis.
+    if "analysis" in cats and (outputs and any(EXT2CAT.get(a["ext"]) == "document" for a in outputs)):
+        cats.remove("analysis")
     if not cats:
         return (["general"], "conversational (no saved artifact)")
+    # v47: tie -> the final output's format decides.
+    if len(cats) > 1:
+        fo = final_output(outputs)
+        fo_cat = EXT2CAT.get(fo["ext"]) if fo else None
+        if fo_cat in cats:
+            return ([fo_cat], "")
     cats.sort(key=lambda c: PRIORITY.index(c) if c in PRIORITY else 99)
-    return (cats[:2], "" if outputs else "conversational (no saved artifact)")
+    # v44: ONE category per session. Time saved is attributed to the primary
+    # category only, so no session is listed (or counted) under two categories.
+    return (cats[:1], "" if outputs else "conversational (no saved artifact)")
 
 
 # ---------------------------------------------------------------------------

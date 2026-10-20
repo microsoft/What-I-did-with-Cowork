@@ -1,0 +1,279 @@
+{
+  "meta": {
+    "user": "Jordan Rivera",
+    "email": "jordan.rivera@contoso.com",
+    "generated": "2026-09-18",
+    "window": {"from": "2026-08-19", "to": "2026-09-18", "label": "Last 30 days (demo)", "months": 1},
+    "hourly_rate": 95
+  },
+  "sessions": [
+    {
+      "id": "demo01",
+      "date": "2026-08-20",
+      "hour": 9,
+      "goal": "Synthesize the FY26 competitive landscape briefing from 7 analyst reports and our win/loss data",
+      "inputs": [
+        {"name": "gartner-mq.pdf", "ext": "pdf"},
+        {"name": "forrester-wave.pdf", "ext": "pdf"},
+        {"name": "idc-marketscape.pdf", "ext": "pdf"},
+        {"name": "competitor-pricing.xlsx", "ext": "xlsx"},
+        {"name": "win-loss-q2.csv", "ext": "csv"},
+        {"name": "analyst-notes.docx", "ext": "docx"},
+        {"name": "field-feedback.pdf", "ext": "pdf"}
+      ],
+      "outputs": [
+        {"name": "Competitive_Landscape_FY26.pptx", "ext": "pptx"},
+        {"name": "Competitor_Matrix.xlsx", "ext": "xlsx"}
+      ],
+      "apps_accessed": ["Excel", "PowerPoint", "Word"],
+      "actions": ["read_files", "analyze", "build_matrix", "draft_deck"],
+      "sources_reviewed": 7
+    },
+    {
+      "id": "demo02",
+      "date": "2026-08-21",
+      "hour": 14,
+      "goal": "Debug and refactor the Python ETL pipeline that loads campaign telemetry into the warehouse",
+      "inputs": [
+        {"name": "etl_pipeline.py", "ext": "py"},
+        {"name": "error-log.txt", "ext": "txt"}
+      ],
+      "outputs": [
+        {"name": "etl_pipeline.py", "ext": "py"},
+        {"name": "test_etl.py", "ext": "py"}
+      ],
+      "code_loc": 340,
+      "runs": {"code": 6}
+    },
+    {
+      "id": "demo03",
+      "date": "2026-08-24",
+      "hour": 8,
+      "goal": "Triage my Outlook inbox, summarize the overnight threads and draft replies to the top 5 customer emails",
+      "inputs": [],
+      "outputs": [
+        {"name": "Inbox_Summary.docx", "ext": "docx"}
+      ],
+      "apps_accessed": ["Outlook", "Word"],
+      "actions": ["scan_inbox", "summarize_threads", "draft_replies"],
+      "sources_reviewed": 18
+    },
+    {
+      "id": "demo04",
+      "date": "2026-08-25",
+      "hour": 11,
+      "goal": "Recap the customer advisory board meeting transcript and extract action items with owners and due dates",
+      "inputs": [
+        {"name": "cab-transcript.vtt", "ext": "txt"}
+      ],
+      "outputs": [
+        {"name": "CAB_Recap.docx", "ext": "docx"},
+        {"name": "Action_Items.xlsx", "ext": "xlsx"}
+      ],
+      "apps_accessed": ["Teams", "Word", "Excel"],
+      "actions": ["read_transcript", "extract_actions", "assign_owners"],
+      "sources_reviewed": 1
+    },
+    {
+      "id": "demo05",
+      "date": "2026-08-26",
+      "hour": 15,
+      "goal": "Summarize the launch-readiness Teams channel and post an announcement to notify the team of the go/no-go",
+      "inputs": [],
+      "outputs": [
+        {"name": "Channel_Digest.md", "ext": "md"}
+      ],
+      "apps_accessed": ["Teams"],
+      "actions": ["scan_channel", "summarize", "post_announcement"],
+      "sources_reviewed": 42
+    },
+    {
+      "id": "demo06",
+      "date": "2026-08-27",
+      "hour": 10,
+      "goal": "Automate the weekly Power BI pipeline report as a recurring scheduled prompt with a Dynamics 365 connector",
+      "inputs": [
+        {"name": "pipeline-export.csv", "ext": "csv"}
+      ],
+      "outputs": [
+        {"name": "Weekly_Pipeline.pdf", "ext": "pdf"}
+      ],
+      "apps_accessed": ["Power BI", "Dynamics 365"],
+      "actions": ["configure_connector", "schedule_prompt", "render_report"],
+      "sources_reviewed": 3
+    },
+    {
+      "id": "demo07",
+      "date": "2026-08-28",
+      "hour": 13,
+      "goal": "Draft the product one-pager for the new analytics add-on for the sales enablement kit",
+      "inputs": [
+        {"name": "feature-brief.docx", "ext": "docx"}
+      ],
+      "outputs": [
+        {"name": "Analytics_AddOn_OnePager.docx", "ext": "docx"}
+      ]
+    },
+    {
+      "id": "demo08",
+      "date": "2026-08-31",
+      "hour": 9,
+      "goal": "Build the ROI business case and cost analysis for migrating the reporting stack to Fabric",
+      "inputs": [
+        {"name": "current-spend.xlsx", "ext": "xlsx"},
+        {"name": "fabric-quote.pdf", "ext": "pdf"}
+      ],
+      "outputs": [
+        {"name": "Fabric_ROI_Business_Case.xlsx", "ext": "xlsx"},
+        {"name": "ROI_Summary.docx", "ext": "docx"}
+      ],
+      "apps_accessed": ["Excel", "Word"],
+      "actions": ["model_costs", "compute_roi", "draft_summary"],
+      "sources_reviewed": 2
+    },
+    {
+      "id": "demo09",
+      "date": "2026-09-01",
+      "hour": 16,
+      "goal": "Write a Python script to parse the survey exports and generate a CSV of NPS by segment",
+      "inputs": [
+        {"name": "survey-raw.json", "ext": "json"}
+      ],
+      "outputs": [
+        {"name": "parse_nps.py", "ext": "py"},
+        {"name": "nps_by_segment.csv", "ext": "csv"}
+      ],
+      "code_loc": 180,
+      "runs": {"code": 5}
+    },
+    {
+      "id": "demo10",
+      "date": "2026-09-02",
+      "hour": 10,
+      "goal": "Build the FY26 pricing model spreadsheet with tiered discounts and margin scenarios",
+      "inputs": [
+        {"name": "cost-basis.xlsx", "ext": "xlsx"}
+      ],
+      "outputs": [
+        {"name": "FY26_Pricing_Model.xlsx", "ext": "xlsx"}
+      ]
+    },
+    {
+      "id": "demo11",
+      "date": "2026-09-03",
+      "hour": 12,
+      "goal": "Quick question on how to format a nested bullet list in a document",
+      "inputs": [],
+      "outputs": []
+    },
+    {
+      "id": "demo12",
+      "date": "2026-09-04",
+      "hour": 8,
+      "goal": "Prepare a meeting briefing from my calendar and the attendee LinkedIn profiles for the QBR",
+      "inputs": [
+        {"name": "attendees.csv", "ext": "csv"}
+      ],
+      "outputs": [
+        {"name": "QBR_Briefing.docx", "ext": "docx"}
+      ],
+      "apps_accessed": ["Outlook", "Word"],
+      "actions": ["calendar_lookup", "research_attendees", "draft_brief"],
+      "sources_reviewed": 6
+    },
+    {
+      "id": "demo13",
+      "date": "2026-09-08",
+      "hour": 11,
+      "goal": "Synthesize the quarterly business review deck from the 6 regional performance reports",
+      "inputs": [
+        {"name": "amer-perf.pdf", "ext": "pdf"},
+        {"name": "emea-perf.pdf", "ext": "pdf"},
+        {"name": "apac-perf.pdf", "ext": "pdf"},
+        {"name": "latam-perf.pdf", "ext": "pdf"},
+        {"name": "japan-perf.pdf", "ext": "pdf"},
+        {"name": "india-perf.pdf", "ext": "pdf"}
+      ],
+      "outputs": [
+        {"name": "QBR_Deck.pptx", "ext": "pptx"}
+      ],
+      "apps_accessed": ["PowerPoint", "Excel"],
+      "actions": ["read_reports", "synthesize", "draft_deck"],
+      "sources_reviewed": 6
+    },
+    {
+      "id": "demo14",
+      "date": "2026-09-09",
+      "hour": 14,
+      "goal": "Summarize the long procurement email thread and draft a reply to the vendor with our decision",
+      "inputs": [],
+      "outputs": [
+        {"name": "Vendor_Reply.docx", "ext": "docx"}
+      ],
+      "apps_accessed": ["Outlook"],
+      "actions": ["summarize_thread", "draft_reply"],
+      "sources_reviewed": 12
+    },
+    {
+      "id": "demo15",
+      "date": "2026-09-10",
+      "hour": 9,
+      "goal": "Set up a recurring scheduled prompt to build my task list and schedule calendar events for launch week",
+      "inputs": [],
+      "outputs": [
+        {"name": "Launch_Week_Plan.xlsx", "ext": "xlsx"}
+      ],
+      "apps_accessed": ["Outlook", "Excel"],
+      "actions": ["schedule_prompt", "create_calendar_events", "build_task_list"],
+      "sources_reviewed": 1
+    },
+    {
+      "id": "demo16",
+      "date": "2026-09-11",
+      "hour": 15,
+      "goal": "Triage the escalations Teams channel and post a summary of open blockers to the leadership chat",
+      "inputs": [],
+      "outputs": [
+        {"name": "Escalations_Summary.md", "ext": "md"}
+      ],
+      "apps_accessed": ["Teams"],
+      "actions": ["triage_channel", "summarize_blockers", "post_message"],
+      "sources_reviewed": 27
+    },
+    {
+      "id": "demo17",
+      "date": "2026-09-14",
+      "hour": 10,
+      "goal": "Benchmark and compare the three shortlisted CDP vendors against our requirements and cost",
+      "inputs": [
+        {"name": "vendor-a-rfp.pdf", "ext": "pdf"},
+        {"name": "vendor-b-rfp.pdf", "ext": "pdf"},
+        {"name": "vendor-c-rfp.pdf", "ext": "pdf"},
+        {"name": "requirements.xlsx", "ext": "xlsx"}
+      ],
+      "outputs": [
+        {"name": "CDP_Vendor_Comparison.xlsx", "ext": "xlsx"},
+        {"name": "Recommendation.docx", "ext": "docx"}
+      ],
+      "apps_accessed": ["Excel", "Word"],
+      "actions": ["read_rfps", "score_vendors", "draft_recommendation"],
+      "sources_reviewed": 4
+    },
+    {
+      "id": "demo18",
+      "date": "2026-09-16",
+      "hour": 13,
+      "goal": "Package the monthly campaign digest as a reusable skill and draft the launch newsletter",
+      "inputs": [
+        {"name": "digest-template.md", "ext": "md"}
+      ],
+      "outputs": [
+        {"name": "campaign-digest-skill.zip", "ext": "zip"},
+        {"name": "Launch_Newsletter.docx", "ext": "docx"}
+      ],
+      "apps_accessed": ["Word"],
+      "actions": ["build_skill", "package_zip", "draft_newsletter"],
+      "sources_reviewed": 1
+    }
+  ]
+}
