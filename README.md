@@ -32,6 +32,9 @@ The skill:
 
 Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-Did-Copilot), adapted for Copilot Cowork.
 
+> [!TIP]
+> **Want the same view for your whole team?** [**Cowork Dashboard**](https://github.com/microsoft/CoworkDashboard) is a companion skill pair that aggregates these insights at a team level — each member shares private, de-identified time-savings data, and managers get an anonymized team dashboard for adoption, productivity, and ROI. Use the [Installer Studio](https://microsoft.github.io/CoworkDashboard/) to customize it and distribute the skill install files.
+
 ---
 
 ## Installation
