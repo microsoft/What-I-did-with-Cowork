@@ -13,7 +13,9 @@
 
 A 2-minute tour of the report — Time Saved, professional-services-equivalent value, and the Business Process ▸ Project mapping.
 
-<video src="https://github.com/microsoft/What-I-did-with-Cowork/raw/main/media/Cowork_Impact_Report_Overview.mp4" controls width="100%"></video>
+[![Watch the overview on YouTube](https://img.youtube.com/vi/rNcVOnRO5IU/maxresdefault.jpg)](https://youtu.be/rNcVOnRO5IU)
+
+**▶ [Watch on YouTube](https://youtu.be/rNcVOnRO5IU)**
 
 > If the player above doesn't load, [download the overview video](media/Cowork_Impact_Report_Overview.mp4).
 
