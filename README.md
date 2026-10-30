@@ -43,7 +43,7 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 
 **Let Cowork install it for you (easiest):**
 
-1. **Download** the latest version: [`cowork-roi-report-skill-v48.zip`](cowork-roi-report-skill-v48.zip) *(no need to unzip — attach it as-is)*
+1. **Download** the latest version: [`cowork-roi-report-skill-v49.zip`](cowork-roi-report-skill-v49.zip) *(no need to unzip — attach it as-is)*
 2. **Open** a new [Copilot Cowork](https://copilot.cloud.microsoft/cowork) session
 3. **Click the ➕ (plus) symbol** to attach the zip file, then send:
 
@@ -54,8 +54,8 @@ Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-D
 
 | Version | File | Status |
 |---|---|---|
-| **v48** | [`cowork-roi-report-skill-v48.zip`](cowork-roi-report-skill-v48.zip) | ✅ **Latest version** — recommended |
-| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v41) |
+| **v49** | [`cowork-roi-report-skill-v49.zip`](cowork-roi-report-skill-v49.zip) | ✅ **Latest version** — recommended |
+| older | [`archive/`](archive) | Previous versions (kept for reference, incl. v48) |
 
 ---
 
@@ -151,9 +151,7 @@ Sources: Stanford-WB, Microsoft Research, NBER, Forrester — all clickable in t
 ```
 cowork-roi-report/
 ├── SKILL.md                     # skill definition + workflow (loaded by Cowork)
-├── README.md                    # technical documentation
-├── CHANGELOG.md                 # consolidated version history through v41
-├── CHANGELOG-v*.md              # per-release notes (latest: v48 research vs content)
+├── README.md                    # disclaimer + pointer to this repo
 ├── scripts/
 │   ├── reconcile_taxonomy.py    # align-first/create-if-novel; owner-scoped registry; runs before classify.py
 │   ├── classify.py              # deterministic ext→category classifier
@@ -161,24 +159,19 @@ cowork-roi-report/
 │   ├── build_report.py          # renders the self-contained HTML report
 │   ├── to_csv.py                # exports one analysis-ready row per session
 │   ├── mine_session.py          # mines the live session transcript (telemetry hook)
-│   ├── persistence.py           # read / stage / explicitly publish the durable registry
-│   ├── statusline_cost.py       # optional status-line cost helper
 │   ├── apqc_taxonomy.json       # generic APQC fallback business-process taxonomy
 │   ├── roles_taxonomy.json      # role keyword fallback for "roles assembled"
 │   ├── skills_vocabulary.json   # controlled vocabulary for "skills augmented"
-│   ├── process_overrides.json   # per-user session→process map (ships empty `{}`; written to working/ at run time)
-│   └── process_overrides.example.json  # example override map
+│   └── process_overrides.json   # per-user session→process map (ships empty `{}`; written to working/ at run time)
 ├── references/
 │   ├── map-my-work-playbook.md  # derives your own Business Processes ▸ Projects (run inline)
 │   ├── methodology.md           # detailed bands table + two-clock formulas
 │   ├── classification-methodology.md  # how categories + Cowork-fit (H/M/L) are decided
 │   ├── classification-reference.md    # extension/category heuristics + raw-harvest schema
-│   ├── persistence.md           # how the registry is read, staged and published
 │   └── value-pillars.md         # the four-pillar crosswalk (reference only)
-└── examples/
-    ├── sample_sessions.json     # synthetic input (safe to share)
-    └── demo_sessions.json       # synthetic demo input
 ```
+
+> Cowork accepts a skill with **SKILL.md plus at most 20 other files**. `python tools/build_skill_zip.py` checks the limit (also enforced in CI) and builds the release zip.
 
 The **durable taxonomy memory** is a per-user, owner-scoped registry (`~/.claude/cowork-process-registry.<user>.json`, Processes + known Projects) that is read first, aligned to, and persisted every run. It lives on the user's own mount (syncing to their OneDrive `Documents/Cowork/`) and is never bundled with the skill; a first run with no registry starts clean and mints processes from the user's own sessions.
 
@@ -206,6 +199,7 @@ python scripts/to_csv.py       --data working/cowork_roi_data.json --out output/
 
 ## What's new
 
+- **v49** — Fixes **"That archive has too many files"** on upload: the skill now ships **SKILL.md + 16 files** (Cowork allows at most 20 besides SKILL.md). Removed per-version changelogs, examples and unused helper scripts; report logic is unchanged. A CI check now blocks any release over the limit.
 - **v48** — Research vs content: a session counts as **Analysis & Research** when the goal states research intent *and* it gathered from **≥ 3 sources**, even if the findings end in a deck or doc. Content verbs (draft, design, polish, build a deck) keep work in Document & content creation. The methodology now spells out the full ordered rule set, file-type map and worked examples.
 - **v47** — When several categories fit, the **format of the final deliverable** breaks the tie; outside-M365 systems become a Specialized *candidate* rather than an override.
 - **v46** — Sessions that touch systems outside Microsoft 365 (CRM, ServiceNow, Jira, SAP, GitHub, etc. via connectors or MCP) are classified as **Specialized workflows**.
@@ -222,7 +216,7 @@ python scripts/to_csv.py       --data working/cowork_roi_data.json --out output/
 - **v34** — task categories now follow the **Cowork usage taxonomy** labels, and **Cowork-fit** becomes a rule + LLM-review hybrid (each grade flagged rule-based / AI-confirmed / AI-reviewed).
 - **v28–v33** — per-project **Cowork-fit (H/M/L)** grading, taxonomy-driven category assignment, and the layout overhaul with one canonical **Your projects** table.
 
-Full version history lives in [`skill/CHANGELOG.md`](skill/CHANGELOG.md), with older release zips in [`archive/`](archive).
+Older release zips are in [`archive/`](archive); earlier detailed changelogs remain in git history.
 
 ---
 
