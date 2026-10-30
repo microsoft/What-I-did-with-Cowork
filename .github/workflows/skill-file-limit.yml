@@ -1,0 +1,33 @@
+name: Skill file limit
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Validate skill/ folder (SKILL.md + at most 20 other files)
+        run: python tools/build_skill_zip.py
+      - name: Validate release zips at repo root
+        run: |
+          python - <<'PY'
+          import glob, sys, zipfile
+          bad = False
+          for z in glob.glob("cowork-roi-report-skill-*.zip"):
+              all_names = zipfile.ZipFile(z).namelist()
+              dirs = [n for n in all_names if n.endswith("/")]
+              names = [n for n in all_names if not n.endswith("/")]
+              others = [n for n in names if n != "SKILL.md"]
+              print(f"{z}: {len(names)} files, {len(dirs)} dir entries")
+              if "SKILL.md" not in names or len(others) > 20 or dirs:
+                  print(f"ERROR: {z} must contain SKILL.md + at most 20 other files and no directory entries")
+                  bad = True
+          sys.exit(1 if bad else 0)
+          PY

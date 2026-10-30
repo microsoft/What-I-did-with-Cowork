@@ -15,7 +15,7 @@ description: |
 metadata:
   category: analysis
   icon: BarChart4
-  version: "41"
+  version: "49"
 ---
 
 # Cowork ROI — Impact Report Generator
