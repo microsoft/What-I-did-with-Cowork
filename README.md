@@ -3,34 +3,13 @@
 
 # What Cowork Did for Me
 
-> A personal impact report skill for **Microsoft Copilot Cowork** — it leads with research-anchored **Time Saved** and its **professional-services-equivalent value**, then maps your work to your own Business Processes and Projects and grades each project's **Cowork-fit**.
+## What is this?
 
-![Report Hero](images/report-hero.png)
-
----
-
-## Watch the overview
-
-A 2-minute tour of the report — Time Saved, professional-services-equivalent value, and the Business Process ▸ Project mapping.
+A skill for [Copilot Cowork](https://copilot.cloud.microsoft/cowork) that generates a **single-file HTML report** from your own Cowork session history in OneDrive. It answers: *"How much time and value has Cowork given me?"* — research-anchored **Time Saved**, its **professional-services-equivalent value**, and your work mapped to **Business Processes ▸ Projects** with each project's **Cowork-fit**.
 
 [![Watch the overview on YouTube](https://img.youtube.com/vi/rNcVOnRO5IU/maxresdefault.jpg)](https://youtu.be/rNcVOnRO5IU)
 
-**▶ [Watch on YouTube](https://youtu.be/rNcVOnRO5IU)**
-
-> If the player above doesn't load, [download the overview video](media/Cowork_Impact_Report_Overview.mp4).
-
----
-
-## What is this?
-
-**"What Cowork Did for Me"** is a skill for [Copilot Cowork](https://copilot.cloud.microsoft/cowork) that generates a polished, Microsoft-branded **single-file HTML report** from your own Cowork session history stored in OneDrive. It answers the question: *"How much time and value has Cowork given me?"*
-
-The skill:
-- Harvests your Cowork session artifacts (inputs analyzed & outputs produced) from OneDrive — scoped to the Cowork app across all three `Documents/Cowork/` layouts
-- Classifies each session into research-anchored task categories
-- Computes **research-anchored Time Saved** and its **professional-services-equivalent value**
-- Maps your work to your own **Business Processes ▸ Projects** and grades each project's **Cowork-fit** — did it really need Cowork, or could a single in-app Copilot have done it?
-- Renders a self-contained, interactive HTML report you can share or print to PDF
+**▶ [Watch the 2-minute overview](https://youtu.be/rNcVOnRO5IU)** · [download the video](media/Cowork_Impact_Report_Overview.mp4)
 
 Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-Did-Copilot), adapted for Copilot Cowork.
 
@@ -66,15 +45,21 @@ The report leads with research-anchored **Time Saved** (conservative / typical /
 
 ![Time Saved hero](images/report-hero.png)
 
+### ROI by Business Process — the view that matters most
+Cowork's value shows up where your work actually happens, so the report rolls everything up by **Business Process ▸ Project**, derived from your own footprint at run time. For each process you see:
+- **Time Saved** (conservative / typical / optimistic) and the **professional-services-equivalent value** at your hourly rate
+- **Projects** under it, each with its own hours, value, and **Cowork-fit** grade (High / Medium / Low)
+- **Roles Cowork assembled** for that process — the specialists a billing firm would have charged for
+- **Where the ROI concentrates** — spot which processes return the most, and which are better served by a single in-app Copilot
+
+Group the same table by **task Category** in place whenever you want the activity view instead.
+
+![ROI by Business Process](images/report-process.png)
+
 ### Where the time went — by task category
-See where your time went across the research-anchored task categories, each valued at its cited per-task band.
+The complementary activity view: time saved across the research-anchored task categories, each valued at its cited per-task band.
 
 ![Categories breakdown](images/report-categories.png)
-
-### Your projects
-One canonical **Your projects** table lists every project once — group it by **Business Process** or **task Category** in place. Each row carries its **Cowork-fit** grade, roles, hours, and value, all derived from your own footprint at run time.
-
-![Your projects](images/report-process.png)
 
 ### Cowork-fit — did the work need Cowork?
 Every project gets a **High / Medium / Low** grade from the *single-surface test*: could one in-app Copilot (Excel, Word, Outlook, Teams, chat) have done it end-to-end? A deterministic rule sets a reproducible baseline; an optional LLM review can confirm or adjust it. Each grade's hover shows the reason **and** the method (rule-based / AI-confirmed / AI-reviewed).
@@ -85,8 +70,8 @@ The professional roles a billing firm would charge for your work, each linked to
 ### Full report sections
 - **Hero** — research-anchored Time Saved (conservative / typical / optimistic) + professional-services value
 - **KPIs** — sessions, run tasks, deliverables, active days, expert-equivalent hours
+- **ROI by Business Process** — Time Saved, value, roles, and Cowork-fit rolled up per process and project (also groupable by Category)
 - **Where the time went** — research-anchored time-savings bars by task category
-- **Your projects** — one table, groupable by Business Process or Category, each row with its Cowork-fit grade, roles, hours, and value
 - **Cowork-fit (H/M/L)** — per-project grade from the single-surface test (rule baseline + optional LLM review); reason and method on hover
 - **Roles Cowork assembled** — the professional roles a billing firm would charge for, each linked to a job search, plus a Projects × Roles heatmap
 - **Deliverables & the skills behind them** (collapsed)
