@@ -3,34 +3,13 @@
 
 # What Cowork Did for Me
 
-> A personal impact report skill for **Microsoft Copilot Cowork** — it leads with research-anchored **Time Saved** and its **professional-services-equivalent value**, then maps your work to your own Business Processes and Projects and grades each project's **Cowork-fit**.
+## What is this?
 
-![Report Hero](images/report-hero.png)
-
----
-
-## Watch the overview
-
-A 2-minute tour of the report — Time Saved, professional-services-equivalent value, and the Business Process ▸ Project mapping.
+A skill for [Copilot Cowork](https://copilot.cloud.microsoft/cowork) that generates a **single-file HTML report** from your own Cowork session history in OneDrive. It answers: *"How much time and value has Cowork given me?"* — research-anchored **Time Saved**, its **professional-services-equivalent value**, and your work mapped to **Business Processes ▸ Projects** with each project's **Cowork-fit**.
 
 [![Watch the overview on YouTube](https://img.youtube.com/vi/rNcVOnRO5IU/maxresdefault.jpg)](https://youtu.be/rNcVOnRO5IU)
 
-**▶ [Watch on YouTube](https://youtu.be/rNcVOnRO5IU)**
-
-> If the player above doesn't load, [download the overview video](media/Cowork_Impact_Report_Overview.mp4).
-
----
-
-## What is this?
-
-**"What Cowork Did for Me"** is a skill for [Copilot Cowork](https://copilot.cloud.microsoft/cowork) that generates a polished, Microsoft-branded **single-file HTML report** from your own Cowork session history stored in OneDrive. It answers the question: *"How much time and value has Cowork given me?"*
-
-The skill:
-- Harvests your Cowork session artifacts (inputs analyzed & outputs produced) from OneDrive — scoped to the Cowork app across all three `Documents/Cowork/` layouts
-- Classifies each session into research-anchored task categories
-- Computes **research-anchored Time Saved** and its **professional-services-equivalent value**
-- Maps your work to your own **Business Processes ▸ Projects** and grades each project's **Cowork-fit** — did it really need Cowork, or could a single in-app Copilot have done it?
-- Renders a self-contained, interactive HTML report you can share or print to PDF
+**▶ [Watch the 2-minute overview](https://youtu.be/rNcVOnRO5IU)** · [download the video](media/Cowork_Impact_Report_Overview.mp4)
 
 Inspired by [microsoft/What-I-Did-Copilot](https://github.com/microsoft/What-I-Did-Copilot), adapted for Copilot Cowork.
 
